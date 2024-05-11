@@ -48,8 +48,8 @@ def encoder(args):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 3:
-        print("USAGE: python build_pile_dataset.py $EUROPARL_DIR $SPLIT")
+    if len(sys.argv) != 4:
+        print("USAGE: python build_pile_dataset.py $EUROPARL_DIR $SPLIT $LANG")
         exit()
 
     # path directory holding the dataset text files (europarl in this case)
@@ -110,7 +110,8 @@ if __name__ == "__main__":
         pile_files[fid].seek(line_byte_offset) 
 
         # # read the line
-        # line = pile_files[fid].readline()
+        # why does this line need to be here in order for the next line to work?
+        line = pile_files[fid].readline()
 
         # load the line
         next_line = json.loads(next(pile_files[fid]))["text"]
