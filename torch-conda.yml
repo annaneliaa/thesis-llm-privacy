@@ -5,7 +5,6 @@ channels:
 dependencies:
     - python=3.11
     - pip>=19.0
-    - pytorch 
     - torchvision 
     - torchaudio
     - jupyter
@@ -23,9 +22,11 @@ dependencies:
     - boto3
     - ipykernel
     - nltk
-    - pickle
+    - absl-py
+    - transformers
+    - numpy
     - pip:
         - bayesian-optimization
         - gym
         - kaggle
-        
+        - accelerate
