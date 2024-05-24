@@ -22,7 +22,7 @@ NUM_TRIALS = 100
 SUFFIX_LEN = 50
 PREFIX_LEN = 50
 MODEL = transformers.AutoModelForCausalLM.from_pretrained("EleutherAI/gpt-neo-125M")
-# cannot run with cuda
+
 MODEL = MODEL.half().eval()
 
 
