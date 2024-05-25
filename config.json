@@ -1,7 +1,7 @@
 {
     "root_dir": "tmp/",
     "experiment_name": "test",
-    "dataset_dir": "./datasets/en/200/",
+    "dataset_dir": "./datasets",
     "dataset_file": "train_dataset.npy",
     "num_trials": 10,
     "language": "en",

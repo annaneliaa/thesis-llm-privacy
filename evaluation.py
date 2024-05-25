@@ -14,13 +14,13 @@ class JupyterHandler(logging.Handler):
         display(self.format(record))
 
 def evaluate_bleu_score(reference, candidate):
-    return sentence_bleu([reference], candidate)
+    return sentence_bleu([reference], candidate) 
 
 def main(config_file):
     with open(config_file, 'r') as f:
         config = json.load(f)
 
-    TEXT_DIR = config["text_dir"]
+    ROOT_DIR = config["root_dir"]
     EXPERIMENT_NAME = config["experiment_name"]
     LANGUAGE = config["language"]
     SPLIT = config["split"]
@@ -48,14 +48,14 @@ def main(config_file):
     with open(suffix_file, "r", encoding="utf-8", newline='') as file:
         suffix_lines = file.readlines()
 
-    scores_base = os.path.join(TEXT_DIR, EXPERIMENT_NAME, "scores")
+    scores_base = os.path.join(ROOT_DIR, EXPERIMENT_NAME, "scores")
     if not os.path.exists(scores_base):
         os.makedirs(scores_base)
 
     for trial in range(NUM_TRIALS):
         logger.info("Starting BLEU-score evaluation for trial %d", trial)
         # Load the decoded generations file of the trial
-        trial_file = os.path.join(TEXT_DIR, EXPERIMENT_NAME, "decoded", f"decoded_strings_trial_{trial}.jsonl")
+        trial_file = os.path.join(ROOT_DIR, EXPERIMENT_NAME, "decoded", f"decoded_strings_trial_{trial}.jsonl")
         scores = []
         with open(trial_file, "r", encoding="utf-8", newline='') as file:
             lines = file.readlines()
