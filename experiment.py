@@ -1,9 +1,7 @@
 import logging
 from IPython.display import display
 
-import csv
 import os
-import tempfile
 from typing import Tuple, Union
 import numpy as np
 import torch
@@ -24,6 +22,7 @@ def generations_to_jsonl(output_file_path: str, generations: np.ndarray):
     """Converts the `generations` to a JSONL file at `path`."""
 
     with open(output_file_path, "w", encoding="utf-8", newline='') as file:
+        exid = 0
 
         for row in generations:
             # Convert token IDs to strings
@@ -36,15 +35,17 @@ def generations_to_jsonl(output_file_path: str, generations: np.ndarray):
                 continue
 
             # Create a JSON object with a "text" field containing the line
-            json_object = {"text": line}
+            json_object = {"exid": exid,
+                           "text": line}
 
             # Write the JSON object to the output file as a single line
             json.dump(json_object, file, ensure_ascii=False)
             file.write("\n")
+            exid += 1
 
     logger.info("Decoded strings saved to: %s", str(output_file_path))
     
-
+# set up logger
 logger = logging.getLogger()
 handler = JupyterHandler()
 logger.addHandler(handler)
@@ -54,7 +55,7 @@ logger.setLevel(logging.INFO)
 # Define constants directly since we're not using flags in a Jupyter notebook
 ROOT_DIR = "tmp/"
 EXPERIMENT_NAME = "test3"
-DATASET_DIR = "./datasets"
+DATASET_DIR = "./datasets/en/200/"
 DATASET_FILE = "train_dataset.npy"
 NUM_TRIALS = 1
 

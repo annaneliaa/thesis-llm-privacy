@@ -1,13 +1,9 @@
 import os
-import csv
 import numpy as np
 import json
 from transformers import AutoTokenizer
-import sys
-import hashlib
 import logging
 from IPython.display import display
-
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
@@ -36,12 +32,6 @@ EXAMPLE_TOKEN_LEN = 200
 PREPREFIX_LEN = 100
 PREFIX_LEN = 50
 SUFFIX_LEN = 50
-
-def encoder(args):
-    exid, next_line, start_byte, end_byte, count = args
-    encoded = tokenizer.encode(next_line, max_length=1024, truncation=True)
-    sequence = encoded[start_byte:end_byte]
-    return exid, sequence, count
 
 if __name__ == "__main__":
     logger.info("===== Starting dataset token split generation for language %s with token length %s =====", LANGUAGE, EXAMPLE_TOKEN_LEN)

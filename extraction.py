@@ -25,7 +25,6 @@ MODEL = transformers.AutoModelForCausalLM.from_pretrained("EleutherAI/gpt-neo-12
 
 MODEL = MODEL.half().eval()
 
-
 def generate_for_prompts(prompts: np.ndarray, batch_size: int=32) -> Tuple[np.ndarray, np.ndarray]:
     """Generates suffixes given `prompts` and scores using their likelihood."""
     generations = []
