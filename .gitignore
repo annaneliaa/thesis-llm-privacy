@@ -26,3 +26,6 @@ ENV/
 
 # VS Code
 .vscode/
+
+# Converted data
+*.jsonl
