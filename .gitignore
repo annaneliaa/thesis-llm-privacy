@@ -29,3 +29,9 @@ ENV/
 
 # Converted data
 *.jsonl
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.txt
+*.csv
