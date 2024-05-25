@@ -1,0 +1,13 @@
+{
+    "root_dir": "tmp/",
+    "experiment_name": "test",
+    "dataset_dir": "./datasets/en/200/",
+    "dataset_file": "train_dataset.npy",
+    "num_trials": 10,
+    "language": "en",
+    "split": "train",
+    "suffix_len": 50,
+    "prefix_len": 50,
+    "example_token_len": 200,
+    "preprefix_len": 100
+}

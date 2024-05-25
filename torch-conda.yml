@@ -30,3 +30,4 @@ dependencies:
         - gym
         - kaggle
         - accelerate
+        - matplotlib

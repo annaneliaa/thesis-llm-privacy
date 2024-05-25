@@ -11,6 +11,16 @@ import json
 from transformers import pipeline
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+# Define constants directly since we're not using flags in a Jupyter notebook
+ROOT_DIR = "tmp/"
+EXPERIMENT_NAME = "test"
+DATASET_DIR = "./datasets/en/200/"
+DATASET_FILE = "train_dataset.npy"
+NUM_TRIALS = 10
+
+SUFFIX_LEN = 50
+PREFIX_LEN = 50
+
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
 
@@ -51,16 +61,6 @@ handler = JupyterHandler()
 logger.addHandler(handler)
 
 logger.setLevel(logging.INFO)
-
-# Define constants directly since we're not using flags in a Jupyter notebook
-ROOT_DIR = "tmp/"
-EXPERIMENT_NAME = "test3"
-DATASET_DIR = "./datasets/en/200/"
-DATASET_FILE = "train_dataset.npy"
-NUM_TRIALS = 1
-
-SUFFIX_LEN = 50
-PREFIX_LEN = 50
 
 if torch.cuda.is_available():
     DEFAULT_DEVICE = "cuda"

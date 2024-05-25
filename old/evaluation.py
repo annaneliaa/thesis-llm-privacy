@@ -4,7 +4,6 @@ import json
 import logging
 from IPython.display import display
 from nltk.translate.bleu_score import sentence_bleu
-import argparse
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
@@ -13,28 +12,31 @@ class JupyterHandler(logging.Handler):
     def emit(self, record):
         display(self.format(record))
 
+# Set up logger
+logger = logging.getLogger()
+handler = JupyterHandler()
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+# Define constants
+TEXT_DIR = "tmp/"
+EXPERIMENT_NAME = "test3"
+LANGUAGE = "en"
+SPLIT = "train"
+
+DATASET_DIR = "./datasets"
+
+EXAMPLE_TOKEN_LEN = 200
+PREPREFIX_LEN = 100
+PREFIX_LEN = 50
+SUFFIX_LEN = 50
+
+NUM_TRIALS = 1
+
 def evaluate_bleu_score(reference, candidate):
     return sentence_bleu([reference], candidate)
 
-def main(config_file):
-    with open(config_file, 'r') as f:
-        config = json.load(f)
-
-    TEXT_DIR = config["text_dir"]
-    EXPERIMENT_NAME = config["experiment_name"]
-    LANGUAGE = config["language"]
-    SPLIT = config["split"]
-    DATASET_DIR = config["dataset_dir"]
-    EXAMPLE_TOKEN_LEN = config["example_token_len"]
-    PREFIX_LEN = config["prefix_len"]
-    NUM_TRIALS = config["num_trials"]
-
-    # Set up logger
-    logger = logging.getLogger()
-    handler = JupyterHandler()
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
-
+if __name__ == "__main__":
     logger.info("===== Starting evaluation of similarity between generated and original text in language %s for %d prefix & suffix length =====", LANGUAGE, PREFIX_LEN)
 
     dataset_base = os.path.join(DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN))
@@ -82,9 +84,3 @@ def main(config_file):
         logger.info("Finished BLEU-score evaluation for trial %d", trial)
 
     logger.info("===== Done ======")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
-    args = parser.parse_args()
-    main(args.config_file)
