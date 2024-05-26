@@ -1,0 +1,8 @@
+{
+    "dataset_dir": "nl-en/",
+    "dataset_name": "europarl-v7.nl-en",
+    "language": "nl",
+    "token_length": 200,
+    "target_dir": "./datasets/csv",
+    "byte_offset_file": "europarl-v7.nl-en.nl.csv"
+}
