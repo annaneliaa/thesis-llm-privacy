@@ -3,6 +3,8 @@
 # Ignore the datasets directory
 /datasets/
 /nl-en/
+/DGT-TM-2016/
+/tmp/
 
 # Python
 __pycache__/

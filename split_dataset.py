@@ -21,18 +21,21 @@ logger.setLevel(logging.INFO)
 
 # Set up tokenizer
 tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neo-125M")
+tokenizer.add_special_tokens({'pad_token': ''})
 
 def main(args):
     DATASET_DIR = args["dataset_dir"]
     DATASET_FILE = args["dataset_file"]
     LANGUAGE = args["language"]
     SPLIT = args["split"]
-    OUTPUT_DIR = args["output_dir"]
+    SOURCE_DIR = args["source_dir"]
 
     EXAMPLE_TOKEN_LEN = args["example_token_len"]
     PREPREFIX_LEN = args["preprefix_len"]
     PREFIX_LEN = args["prefix_len"]
     SUFFIX_LEN = args["suffix_len"]
+    
+    BATCH_SIZE = args["batch_size"]
 
     logger.info("===== Starting dataset token split generation for language %s with token length %s =====", LANGUAGE, EXAMPLE_TOKEN_LEN)
 
@@ -42,7 +45,6 @@ def main(args):
 
     prompts = {}
     line_count = 0
-    batch_size = args["batch_size"]
 
     for europarl_file in europarl_files:
         line = europarl_file.readline()
@@ -50,20 +52,20 @@ def main(args):
             json_obj = json.loads(line)
             exid = json_obj["exid"]
             sentence = json_obj["text"]
-            tokens = tokenizer.encode(sentence, max_length=1024, truncation=True)
+            tokens = tokenizer.encode(sentence, max_length=EXAMPLE_TOKEN_LEN, truncation=True, padding='max_length')
             if len(tokens) > 0:
                 prompts[exid] = tokens
 
             line_count += 1
-            if line_count % batch_size == 0:
+            if line_count % BATCH_SIZE == 0:
                 logger.info("Processed %d lines", line_count)
 
             line = europarl_file.readline()
 
-    if not os.path.exists(OUTPUT_DIR):
-        os.mkdir(OUTPUT_DIR)
+    if not os.path.exists(SOURCE_DIR):
+        os.mkdir(SOURCE_DIR)
 
-    npy_arrays_base = os.path.join(OUTPUT_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN))
+    npy_arrays_base = os.path.join(SOURCE_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN))
     os.makedirs(npy_arrays_base, exist_ok=True)
 
     prompts = [x[1] for x in sorted(prompts.items())]

@@ -114,16 +114,20 @@ if __name__ == "__main__":
     NUM_TRIALS = config["num_trials"]
     SUFFIX_LEN = config["suffix_len"]
     PREFIX_LEN = config["prefix_len"]
+    SOURCE_DIR = config["source_dir"]
+    LANGUAGE = config["language"]
+    EXAMPLE_TOKEN_LEN = config["example_token_len"]
 
     logger.info("======= Starting extraction ======")
     logger.info("Number of trials: %d", NUM_TRIALS)
 
-    experiment_base = os.path.join(ROOT_DIR, EXPERIMENT_NAME)
+    experiment_base = os.path.join(ROOT_DIR, LANGUAGE, EXPERIMENT_NAME)
     generations_base = os.path.join(experiment_base, "generations")
     os.makedirs(generations_base, exist_ok=True)
     losses_base = os.path.join(experiment_base, "losses")
     os.makedirs(losses_base, exist_ok=True)
-    prompts = load_prompts(DATASET_DIR, "train_prefix.npy")[-1000:]
+    prompts_base = os.path.join(SOURCE_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN))
+    prompts = load_prompts(prompts_base, "train_prefix.npy")[-1000:]
 
     all_generations, all_losses = [], []
     if not all([os.listdir(generations_base), os.listdir(losses_base)]):

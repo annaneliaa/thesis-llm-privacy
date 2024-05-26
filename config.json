@@ -1,13 +1,16 @@
 {
     "root_dir": "tmp/",
     "experiment_name": "test",
-    "dataset_dir": "./datasets",
-    "dataset_file": "train_dataset.npy",
+    "dataset_dir": "nl-en",
+    "dataset_file": "europarl-v7.nl-en",
     "num_trials": 10,
-    "language": "en",
+    "language": "nl",
     "split": "train",
     "suffix_len": 50,
     "prefix_len": 50,
     "example_token_len": 200,
-    "preprefix_len": 100
+    "preprefix_len": 100,
+    "source_dir": "./datasets",
+    "source_file": "train_dataset.npy",
+    "batch_size": 32
 }
