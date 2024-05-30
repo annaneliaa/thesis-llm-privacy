@@ -74,9 +74,15 @@ def main(args):
     # save the token sequences to .npy files to be used in model generation
     np.save(os.path.join(npy_arrays_base, SPLIT + "_dataset.npy"), prompts)
     # split the tokens into preprefix, prefix, and suffix
-    np.save(os.path.join(npy_arrays_base, SPLIT + "_preprefix.npy"), prompts[:, :PREPREFIX_LEN])
-    np.save(os.path.join(npy_arrays_base, SPLIT + "_prefix.npy"), prompts[:, PREPREFIX_LEN:PREPREFIX_LEN+PREFIX_LEN])
-    np.save(os.path.join(npy_arrays_base, SPLIT + "_suffix.npy"), prompts[:, PREPREFIX_LEN+PREFIX_LEN:PREPREFIX_LEN+PREFIX_LEN+SUFFIX_LEN])
+
+    if(EXAMPLE_TOKEN_LEN == 200):
+        np.save(os.path.join(npy_arrays_base, SPLIT+"_preprefix.npy"), prompts[:, :100])
+        np.save(os.path.join(npy_arrays_base, SPLIT+"_prefix.npy"), prompts[:, 100:150])
+        np.save(os.path.join(npy_arrays_base, SPLIT+"_suffix.npy"), prompts[:, 150:200])
+
+    elif(EXAMPLE_TOKEN_LEN == 100):
+        np.save(os.path.join(npy_arrays_base, SPLIT + "_prefix.npy"), prompts[:, 0:PREFIX_LEN])
+        np.save(os.path.join(npy_arrays_base, SPLIT + "_suffix.npy"), prompts[:, PREFIX_LEN:PREFIX_LEN+SUFFIX_LEN])
 
     logger.info("===== Done ======")
 
