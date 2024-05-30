@@ -5,6 +5,7 @@
 /nl-en/
 /DGT-TM-2016/
 /tmp/
+/wandb/
 
 # Python
 __pycache__/
