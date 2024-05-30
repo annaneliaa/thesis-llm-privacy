@@ -1,0 +1,9 @@
+2024-05-29 13:36:01,560 - INFO
+Traceback (most recent call last):
+  File "/Users/annavisman/stack/RUG/CS/Year3/thesis/thesis-llm-privacy/evaluation.py", line 105, in <module>
+    main(args.config_file)
+  File "/Users/annavisman/stack/RUG/CS/Year3/thesis/thesis-llm-privacy/evaluation.py", line 58, in main
+    with open(prefix_file, "r", encoding="utf-8", newline='') as file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'nl-en/nl/200/train_prefix.jsonl'
+===== Starting evaluation of similarity between generated and original text in language nl for 50 prefix & suffix length =====

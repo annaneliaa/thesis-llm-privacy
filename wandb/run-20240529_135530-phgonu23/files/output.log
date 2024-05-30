@@ -1,0 +1,36 @@
+2024-05-29 13:55:33,474 - INFO
+2024-05-29 13:55:33,479 - INFO
+/opt/miniconda3/envs/torch/lib/python3.11/site-packages/nltk/translate/bleu_score.py:552: UserWarning:
+The hypothesis contains 0 counts of 4-gram overlaps.
+Therefore the BLEU score evaluates to 0, independently of
+how many N-gram overlaps of lower order it contains.
+Consider using lower n-gram order or use SmoothingFunction()
+  warnings.warn(_msg)
+2024-05-29 13:55:33,934 - INFO
+2024-05-29 13:55:33,935 - INFO
+2024-05-29 13:55:34,392 - INFO
+2024-05-29 13:55:34,392 - INFO
+2024-05-29 13:55:34,846 - INFO
+2024-05-29 13:55:34,846 - INFO
+===== Starting evaluation of similarity between generated and original text in language nl for 50 prefix & suffix length =====
+Starting BLEU-score evaluation for trial 0
+Finished BLEU-score evaluation for trial 0
+Starting BLEU-score evaluation for trial 1
+Finished BLEU-score evaluation for trial 1
+Starting BLEU-score evaluation for trial 2
+Finished BLEU-score evaluation for trial 2
+Starting BLEU-score evaluation for trial 3
+Finished BLEU-score evaluation for trial 3
+Starting BLEU-score evaluation for trial 4
+Finished BLEU-score evaluation for trial 4
+Starting BLEU-score evaluation for trial 5
+Finished BLEU-score evaluation for trial 5
+Starting BLEU-score evaluation for trial 6
+Finished BLEU-score evaluation for trial 6
+2024-05-29 13:55:35,304 - INFO
+2024-05-29 13:55:35,304 - INFO
+2024-05-29 13:55:35,764 - INFO
+2024-05-29 13:55:35,764 - INFO
+2024-05-29 13:55:36,222 - INFO
+2024-05-29 13:55:36,222 - INFO
+2024-05-29 13:55:36,716 - INFO

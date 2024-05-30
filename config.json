@@ -3,7 +3,7 @@
     "experiment_name": "test",
     "dataset_dir": "nl-en",
     "dataset_file": "europarl-v7.nl-en",
-    "num_trials": 10,
+    "num_trials": 7,
     "language": "nl",
     "split": "train",
     "suffix_len": 50,

@@ -5,6 +5,7 @@ import logging
 from IPython.display import display
 from nltk.translate.bleu_score import sentence_bleu
 import argparse
+import wandb
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
@@ -28,7 +29,21 @@ def main(config_file):
     EXAMPLE_TOKEN_LEN = config["example_token_len"]
     PREFIX_LEN = config["prefix_len"]
     NUM_TRIALS = config["num_trials"]
+    SOURCE_DIR = config["source_dir"] 
 
+    # Initialize wandb
+    wandb.init(
+        project="thesis-llm-privacy",
+        name="Evaluation BLEU Score - " + EXPERIMENT_NAME + " - " + LANGUAGE + " - " + str(PREFIX_LEN) + " - " + str(NUM_TRIALS),
+        config={
+            'experiment_name': EXPERIMENT_NAME,
+            "dataset": DATASET_DIR,
+            "language": LANGUAGE,
+            "token_len": EXAMPLE_TOKEN_LEN,
+            "prefix_len": PREFIX_LEN,
+            "num_trials": NUM_TRIALS
+        })
+    
     # Set up logger
     logger = logging.getLogger()
     handler = JupyterHandler()
@@ -37,9 +52,9 @@ def main(config_file):
 
     logger.info("===== Starting evaluation of similarity between generated and original text in language %s for %d prefix & suffix length =====", LANGUAGE, PREFIX_LEN)
 
-    dataset_base = os.path.join(DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN))
-    prefix_file = os.path.join(dataset_base, f"{SPLIT}_prefix.jsonl")
-    suffix_file = os.path.join(dataset_base, f"{SPLIT}_suffix.jsonl")
+    np_dataset_base = os.path.join(SOURCE_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN))
+    prefix_file = os.path.join(np_dataset_base, f"{SPLIT}_prefix.jsonl")
+    suffix_file = os.path.join(np_dataset_base, f"{SPLIT}_suffix.jsonl")
 
     # Load the original prefix + suffix from the dataset, connected
     with open(prefix_file, "r", encoding="utf-8", newline='') as file:
@@ -48,14 +63,14 @@ def main(config_file):
     with open(suffix_file, "r", encoding="utf-8", newline='') as file:
         suffix_lines = file.readlines()
 
-    scores_base = os.path.join(ROOT_DIR, EXPERIMENT_NAME, "scores")
+    scores_base = os.path.join(ROOT_DIR, LANGUAGE, EXPERIMENT_NAME, "scores")
     if not os.path.exists(scores_base):
         os.makedirs(scores_base)
 
     for trial in range(NUM_TRIALS):
         logger.info("Starting BLEU-score evaluation for trial %d", trial)
         # Load the decoded generations file of the trial
-        trial_file = os.path.join(ROOT_DIR, EXPERIMENT_NAME, "decoded", f"decoded_strings_trial_{trial}.jsonl")
+        trial_file = os.path.join(ROOT_DIR, LANGUAGE, EXPERIMENT_NAME, "decoded", f"decoded_strings_trial_{trial}.jsonl")
         scores = []
         with open(trial_file, "r", encoding="utf-8", newline='') as file:
             lines = file.readlines()
@@ -71,6 +86,7 @@ def main(config_file):
             reference = prefix + suffix
 
             score = evaluate_bleu_score(reference, candidate)
+            wandb.log({"bleu_score": score})
             # Save the BLEU score for each exid in the trial
             scores.append({"exid": exid, "score": score})
 
@@ -81,6 +97,7 @@ def main(config_file):
 
         logger.info("Finished BLEU-score evaluation for trial %d", trial)
 
+    wandb.finish()
     logger.info("===== Done ======")
 
 if __name__ == "__main__":

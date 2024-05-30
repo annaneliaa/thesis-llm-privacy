@@ -1,0 +1,11 @@
+===== Starting evaluation of similarity between generated and original text in language nl for 50 prefix & suffix length =====
+Starting BLEU-score evaluation for trial 0
+2024-05-29 13:54:10,755 - INFO
+2024-05-29 13:54:10,760 - INFO
+Traceback (most recent call last):
+  File "/Users/annavisman/stack/RUG/CS/Year3/thesis/thesis-llm-privacy/evaluation.py", line 106, in <module>
+    main(args.config_file)
+  File "/Users/annavisman/stack/RUG/CS/Year3/thesis/thesis-llm-privacy/evaluation.py", line 74, in main
+    with open(trial_file, "r", encoding="utf-8", newline='') as file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'tmp/test/decoded/decoded_strings_trial_0.jsonl'
