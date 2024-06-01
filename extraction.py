@@ -8,10 +8,8 @@ import json
 import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neo-125M")
-
 # Configure Python's logging in Jupyter notebook
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 class JupyterHandler(logging.Handler):
     def emit(self, record):
@@ -51,14 +49,22 @@ SOURCE_DIR = config["source_dir"]
 LANGUAGE = config["language"]
 EXAMPLE_TOKEN_LEN = config["example_token_len"]
 BATCH_SIZE = config["batch_size"]
-mod = config["model"]
+model = config["model"]
 
-logger.info("Loading model...")
-MODEL = AutoModelForCausalLM.from_pretrained(
-        "EleutherAI/gpt-neo-125M", low_cpu_mem_usage=True
-    )
-MODEL.to(DEFAULT_DEVICE)
+try:
+    logger.info("Loading tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(model)
+    logger.info("Loading model...")
+    MODEL = AutoModelForCausalLM.from_pretrained(model, low_cpu_mem_usage=True)
+    # move model to GPU
+    MODEL.to(DEFAULT_DEVICE)
+    logger.info("Model loaded successfully.")
+except Exception as e:
+    logger.error(f"Error loading model or tokenizer: {e}")
+    raise
 
+logger.info("Experiment name: %s", config["experiment_name"])
+logger.infO("Language: %s", config["language"])
 logger.info("Model: %s", config["model"])
 
 def generations_to_jsonl(output_file_path: str, generations: np.ndarray):
@@ -134,14 +140,9 @@ def main():
     logger.info("Loading prompts from numpy file")
     prompts = load_prompts(prompts_base, "train_prefix.npy")
 
-    # move model to GPU
-    try:
-        MODEL.to(DEFAULT_DEVICE)
-        print("Model and tokenizer loaded successfully.")
-    except Exception as e:
-        print(f"Error loading model or tokenizer: {e}")
+    all_generations, all_losses = [], []
 
-        all_generations, all_losses = [], []
+    # if experiment is not done before, generate new data
     if not all([os.listdir(generations_base), os.listdir(losses_base)]):
         for trial in range(NUM_TRIALS):
             os.makedirs(experiment_base, exist_ok=True)

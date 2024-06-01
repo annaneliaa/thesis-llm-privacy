@@ -1,10 +1,10 @@
 {
     "root_dir": "tmp/",
-    "experiment_name": "en-100-100",
+    "experiment_name": "nl-100-100-125M",
     "dataset_dir": "nl-en",
     "dataset_file": "europarl-v7.nl-en",
     "num_trials": 100,
-    "language": "en",
+    "language": "nl",
     "split": "train",
     "suffix_len": 50,
     "prefix_len": 50,
