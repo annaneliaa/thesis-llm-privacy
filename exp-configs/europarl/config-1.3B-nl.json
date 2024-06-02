@@ -1,7 +1,7 @@
 {
     "root_dir": "tmp/",
     "experiment_name": "nl-100-100-1.3B",
-    "dataset_dir": "nl-en",
+    "dataset_dir": "europarl",
     "dataset_file": "europarl-v7.nl-en",
     "num_trials": 100,
     "language": "nl",
