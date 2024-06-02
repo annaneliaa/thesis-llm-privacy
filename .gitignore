@@ -1,12 +1,13 @@
 # .gitignore
 
-# Ignore the datasets directory
+# Ignore all datasets directories for now
 /datasets/
 /nl-en/
 /DGT-TM-2016/
 /tmp/
 /wandb/
 /europarl/
+/ECDC/
 
 # Python
 __pycache__/

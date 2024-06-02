@@ -34,7 +34,42 @@ def generations_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer):
 
     print("Decoded strings saved to: %s", str(output_file_path))
 
-# 4. Plot distribution of scores
+# Function to merge bleu scores over different trials of one example sentence with exid curr_exid
+# Using binary search to speed up the search when dealing with large datasets
+# returns a list of dicts with keys "trial" and "score"
+def merge_bleu_scores(directory, num_trials, curr_exid):
+    scores = []
+    for i in range(num_trials):
+        trial_file = directory + f"bleu_scores_trial_{i}.jsonl"
+        if not os.path.exists(trial_file):
+            continue  # Skip if trial file doesn't exist
+        with open(trial_file, 'r') as f:
+            lines = f.readlines()
+            scores_found = False
+            low = 0
+            high = len(lines) - 1
+            while low <= high:
+                mid = (low + high) // 2
+                obj = json.loads(lines[mid])
+                if obj["exid"] == curr_exid:
+                    score_obj = {"trial": i, "score": obj["score"]}
+                    scores.append(score_obj)
+                    scores_found = True
+                    break
+                elif obj["exid"] < curr_exid:
+                    low = mid + 1
+                else:
+                    high = mid - 1
+            if scores_found:
+                # example found, move on to next file
+                continue
+    return scores
+
+# The function sort_bleu_scores(scores) expects a list of dicts
+# each dictionary has a key called "score"
+# sorts this list of dicts based on the value of "score" in DESCENDING order
+def sort_bleu_scores(scores):
+    return sorted(scores, key=lambda x: x["score"], reverse=True)
 
 def read_bleu_scores(file_path):
     scores = []

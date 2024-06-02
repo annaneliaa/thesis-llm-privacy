@@ -1,8 +1,8 @@
 {
-    "dataset_dir": "nl-en/",
-    "dataset_name": "europarl-v7.nl-en",
+    "dataset_dir": "ECB/",
+    "dataset_name": "extracted/ecb_en.txt",
     "language": "nl",
     "token_length": 100,
-    "target_dir": "./datasets/csv/",
-    "byte_offset_file": "europarl-v7.nl-en.nl.csv"
+    "target_dir": "./datasets/ECB/csv",
+    "byte_offset_file": "extracted/ecb_en.txt.nl.csv"
 }

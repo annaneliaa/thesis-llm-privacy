@@ -16,6 +16,7 @@ class JupyterHandler(logging.Handler):
     def emit(self, record):
         display(self.format(record))
 
+# Function to calculate the BLEU score between the reference and candidate text
 def calc_bleu_score(reference, candidate):
     return sentence_bleu([reference], candidate) 
 
@@ -147,6 +148,7 @@ def main(config_file):
         logger.info("Finished BLEU-score calculation for trial %d", trial)
 
     wandb.finish()
+
     logger.info("===== Done ======")
 
 if __name__ == "__main__":
