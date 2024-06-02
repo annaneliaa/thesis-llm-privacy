@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 from experiment_lib import *
 
 # Configure Python's logging in Jupyter notebook
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 class JupyterHandler(logging.Handler):
@@ -167,15 +167,10 @@ def main():
 
             # Compare the generated text with the original text using the BLEU score using example id
             # Concatenate the prefix and suffix to form the reference text
-            try:
-                prefix = json.loads(prefix_lines[index])["text"].strip()
-                suffix = json.loads(suffix_lines[index])["text"].strip()
-                reference = prefix + suffix
-            except json.decoder.JSONDecodeError:
-                logger.info(f"Invalid JSON at index {index}: {prefix_lines[index]}")
-            
+            prefix = json.loads(prefix_lines[index])["text"].strip()
+            suffix = json.loads(suffix_lines[index])["text"].strip()
             reference = prefix + suffix
-
+            
             score = calc_bleu_score(reference, candidate)
 
             # Log the BLEU score to wandb for plotting
