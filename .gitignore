@@ -6,6 +6,7 @@
 /DGT-TM-2016/
 /tmp/
 /wandb/
+/europarl/
 
 # Python
 __pycache__/
@@ -29,6 +30,8 @@ ENV/
 
 # VS Code
 .vscode/
+
+**/.DS_Store
 
 # Converted data
 *.jsonl

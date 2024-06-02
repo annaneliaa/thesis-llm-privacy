@@ -7,6 +7,7 @@ import torch
 import json
 import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from experiment_lib import generations_to_jsonl
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -23,7 +24,7 @@ logger.setLevel(logging.INFO)
 
 logger.info("Parsing arguments...")
 
-# Parse arguments
+# Parse command line arguments
 parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
 args = parser.parse_args()
@@ -31,6 +32,7 @@ args = parser.parse_args()
 with open(args.config_file, 'r') as f:
     config = json.load(f)
 
+# Set default device
 if torch.cuda.is_available():
     DEFAULT_DEVICE = "cuda"
 elif torch.backends.mps.is_available():
@@ -40,17 +42,32 @@ else:
 
 logger.info(f"Default device: {DEFAULT_DEVICE}")
 
+# For saving results
 ROOT_DIR = config["root_dir"]
-EXPERIMENT_NAME = config["experiment_name"]
-NUM_TRIALS = config["num_trials"]
-SUFFIX_LEN = config["suffix_len"]
-PREFIX_LEN = config["prefix_len"]
+# Name of the dataset
+DATASET_DIR = config["dataset_dir"]
+# Directory where the .npy files of the dataset are stored
 SOURCE_DIR = config["source_dir"]
+# Name of the experiment
+EXPERIMENT_NAME = config["experiment_name"]
+# Number of trials
+NUM_TRIALS = config["num_trials"]
+# Length of the prefix
+PREFIX_LEN = config["prefix_len"]
+# Length of the suffix
+SUFFIX_LEN = config["suffix_len"]
+# Preprefix length
+PREPREFIX_LEN = config["preprefix_len"]
+# Language of the scenario (EN/NL)
 LANGUAGE = config["language"]
+# Number of tokens in the complete sequences
 EXAMPLE_TOKEN_LEN = config["example_token_len"]
+# Batch size for feeding prompts to the model
 BATCH_SIZE = config["batch_size"]
+# Name of the model to use
 model = config["model"]
 
+# Load model and tokenizer
 try:
     logger.info("Loading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(model)
@@ -64,23 +81,8 @@ except Exception as e:
     raise
 
 logger.info("Experiment name: %s", config["experiment_name"])
-logger.infO("Language: %s", config["language"])
+logger.info("Language: %s", config["language"])
 logger.info("Model: %s", config["model"])
-
-def generations_to_jsonl(output_file_path: str, generations: np.ndarray):
-    """Converts the `generations` to a JSONL file at `path`."""
-    with open(output_file_path, "w", encoding="utf-8", newline='') as file:
-        exid = 0
-        for row in generations:
-            decoded_string = tokenizer.decode(row, skip_special_tokens=True).replace('Ġ', '')
-            line = decoded_string.strip()
-            if not line:
-                continue
-            json_object = {"exid": exid, "text": line}
-            json.dump(json_object, file, ensure_ascii=False)
-            file.write("\n")
-            exid += 1
-    logger.info("Decoded strings saved to: %s", str(output_file_path))
 
 def generate_for_prompts(prompts: np.ndarray, batch_size: int, suffix_len: int, prefix_len: int) -> Tuple[np.ndarray, np.ndarray]:
     """Generates suffixes given `prompts` and scores using their likelihood."""
@@ -130,7 +132,7 @@ def main():
     logger.info("Number of trials: %d", NUM_TRIALS)
 
     logger.info("Creating paths...")
-    experiment_base = os.path.join(ROOT_DIR, LANGUAGE, EXPERIMENT_NAME)
+    experiment_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
     generations_base = os.path.join(experiment_base, "generations")
     os.makedirs(generations_base, exist_ok=True)
     losses_base = os.path.join(experiment_base, "losses")
@@ -185,7 +187,7 @@ def main():
         output_file_path = os.path.join(experiment_base, f"decoded/decoded_strings_trial_{i}.jsonl")
         output_dir = os.path.dirname(output_file_path)
         os.makedirs(output_dir, exist_ok=True)
-        generations_to_jsonl(output_file_path, data)
+        generations_to_jsonl(output_file_path, data, tokenizer)
 
     logger.info("====== Done ======")
 
