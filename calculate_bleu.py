@@ -63,21 +63,21 @@ with open(args.config_file, "r") as f:
 tokenizer = AutoTokenizer.from_pretrained(model)
 
 # hide this key in ENV variable later
-wandb.login(key="42d7bfea72fc95755780ef73c3aa17c520f5c5f0")
+# wandb.login(key="42d7bfea72fc95755780ef73c3aa17c520f5c5f0")
 
-# Initialize wandb
-wandb.init(
-    project="thesis-llm-privacy",
-    name="Evaluation BLEU Score - " + EXPERIMENT_NAME + " - " + model,
-    config={
-        "experiment_name": EXPERIMENT_NAME,
-        "dataset": DATASET_DIR,
-        "language": LANGUAGE,
-        "token_len": EXAMPLE_TOKEN_LEN,
-        "prefix_len": PREFIX_LEN,
-        "num_trials": NUM_TRIALS,
-    },
-)
+# # Initialize wandb
+# wandb.init(
+#     project="thesis-llm-privacy",
+#     name="Calculation BLEU Score - " + EXPERIMENT_NAME + " - " + model,
+#     config={
+#         "experiment_name": EXPERIMENT_NAME,
+#         "dataset": DATASET_DIR,
+#         "language": LANGUAGE,
+#         "token_len": EXAMPLE_TOKEN_LEN,
+#         "prefix_len": PREFIX_LEN,
+#         "num_trials": NUM_TRIALS,
+#     },
+# )
 
 
 # Function to calculate the BLEU score between the reference and candidate text
@@ -100,19 +100,22 @@ def main():
     prefix_file = os.path.join(np_dataset_base, f"{SPLIT}_prefix.npy")
     suffix_file = os.path.join(np_dataset_base, f"{SPLIT}_suffix.npy")
 
-    prefixes = np.load(prefix_file)
-    suffixes = np.load(suffix_file)
 
     prefix_jsonl_file = np_dataset_base + f"/{SPLIT}_prefix.jsonl"
     suffix_jsonl_file = np_dataset_base + f"/{SPLIT}_suffix.jsonl"
 
+    # Path to exids of the dataset
+    exids = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", "common_exids-"+str(EXAMPLE_TOKEN_LEN)+".csv")
+
     # Check if the prefix jsonl file doesn't exist or is empty
     if not os.path.exists(prefix_jsonl_file) or os.stat(prefix_jsonl_file).st_size == 0:
-        generations_to_jsonl(prefix_jsonl_file, prefixes, tokenizer)
+        prefixes = np.load(prefix_file)
+        generations_to_jsonl(prefix_jsonl_file, prefixes, tokenizer, exids)
 
     # Check if the suffix jsonl file doesn't exist or is empty
     if not os.path.exists(suffix_jsonl_file) or os.stat(suffix_jsonl_file).st_size == 0:
-        generations_to_jsonl(suffix_jsonl_file, suffixes, tokenizer)
+        suffixes = np.load(suffix_file)
+        generations_to_jsonl(suffix_jsonl_file, suffixes, tokenizer, exids)
 
     # Load the original prefix + suffix from the dataset
     # Fill lists
@@ -174,7 +177,7 @@ def main():
             score = calc_bleu_score(reference, candidate)
 
             # Log the BLEU score to wandb for plotting
-            wandb.log({"bleu_score": score, "trial": trial, "exid": exid})
+            # wandb.log({"bleu_score": score, "trial": trial, "exid": exid})
 
             # Save the BLEU score for each exid in the trial
             scores.append({"exid": exid, "score": score})
@@ -187,7 +190,7 @@ def main():
 
         logger.info("Finished BLEU-score calculation for trial %d", trial)
 
-    wandb.finish()
+    # wandb.finish()
 
     logger.info("===== Done ======")
 

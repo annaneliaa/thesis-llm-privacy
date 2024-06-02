@@ -7,7 +7,7 @@ import torch
 import json
 import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from experiment_lib import generations_to_jsonl
+from experiment_lib import generations_to_jsonl, generate_exid_list
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -179,6 +179,8 @@ def main():
         losses = np.stack(losses, axis=1)
 
     logger.info("Decoding model generations to JSONL...")
+    # Path to exids of the dataset
+    exids = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", "common_exids-"+str(EXAMPLE_TOKEN_LEN)+".csv")
     for i in range(0, NUM_TRIALS):
         file_path = os.path.join(experiment_base, f"generations/{i}.npy")
         data = np.load(file_path)
@@ -187,7 +189,7 @@ def main():
         output_file_path = os.path.join(experiment_base, f"decoded/decoded_strings_trial_{i}.jsonl")
         output_dir = os.path.dirname(output_file_path)
         os.makedirs(output_dir, exist_ok=True)
-        generations_to_jsonl(output_file_path, data, tokenizer)
+        generations_to_jsonl(output_file_path, data, tokenizer, exids)
 
     logger.info("====== Done ======")
 

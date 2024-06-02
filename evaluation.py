@@ -39,78 +39,68 @@ def main(config_file):
     EXAMPLE_TOKEN_LEN = config["example_token_len"]
     # Name of the model to use
     model = config["model"]
-
+    
     tokenizer = AutoTokenizer.from_pretrained(model)
 
-    # Initialize wandb
-    wandb.init(
-        project="thesis-llm-privacy",
-        name="Evaluation BLEU Score - " + EXPERIMENT_NAME + " - " + model,
-        config={
-            'experiment_name': EXPERIMENT_NAME,
-            "dataset": DATASET_DIR,
-            "language": LANGUAGE,
-            "token_len": EXAMPLE_TOKEN_LEN,
-            "prefix_len": PREFIX_LEN,
-            "num_trials": NUM_TRIALS
-        })
-        
     # Set up logger
     logger = logging.getLogger()
     handler = JupyterHandler()
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
-    logger.inf("==== Starting evaluation ====")
+    logger.info("==== Starting evaluation ====")
 
     # Merge bleu scores over different trials of all examples
     logger.info("Loading list of example IDs for dataset %s...", DATASET_DIR)
-    dataset_base = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", "common_exids-" + EXAMPLE_TOKEN_LEN + ".csv")
+    dataset_base = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", "common_exids-" + str(EXAMPLE_TOKEN_LEN) + ".csv")
     exids = []
     with open(dataset_base, 'r') as f:
         for line in f:
             exids.append(line.strip())
     f.close()
+
+    logger.info("Loaded %s example IDs", len(exids))
         
     # Create output file
     scores_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "scores")
     os.makedirs(os.path.dirname(scores_base), exist_ok=True)
-    output_file = scores_base + "complete_bleu_scores.jsonl"    
+    output_file = os.path.join(scores_base, "complete_bleu_scores.jsonl")
 
     # the exids list is sorted
-    for exid in exids:
-        logger.info("Processing example %s...", exid)
-        # get all scores for this example
-        scores = merge_bleu_scores(output_file, NUM_TRIALS, exid)
+    # for i in range(len(exids)):
+    #     exid = exids[i]
+    #     logger.info("Processing example %s...", exid)
+    #     # get all scores for this example
+    #     scores = merge_bleu_scores(scores_base, NUM_TRIALS, int(exid), logger)
 
-        json_object = {"exid": exid, "scores": scores}
+    #     json_object = {"exid": exid, "scores": scores}
 
-        # Write the JSON object to the output file as a single line
-        with open(output_file, 'a') as file:
-            json.dump(json_object, file, ensure_ascii=False)
-            file.write("\n")
-        file.close()
-        logger.info("Merged BLEU scores for exid %s", exid)    
+    #     # Write the JSON object to the output file as a single line
+    #     with open(output_file, 'a') as file:
+    #         json.dump(json_object, file, ensure_ascii=False)
+    #         file.write("\n")
+    #     logger.info("Merged BLEU scores for exid %s", exid)   
+ 
 
-    # Sort the bleu scores of all examples
-    logger.info("Sorting BLEU scores...")
-    sorted_output_file = scores_base + "sorted_compl_bleu_scores.jsonl"
-    with open(output_file, 'r') as f, open(sorted_output_file, 'w') as file:
-            lines = f.readlines()
-            for line in lines:
-                obj = json.loads(line)
-                sorted_scores = sort_bleu_scores(obj["scores"])
-                # replace the scores with the sorted list
-                sorted_obj = {"exid": obj["exid"], "scores": sorted_scores}
-                json.dump(sorted_obj, file, ensure_ascii=False)
-                file.write("\n")
-    f.close()
-    file.close()
-    logger.info("Sorted BLEU scores saved to %s", sorted_output_file)
+    # # Sort the bleu scores of all examples
+    # logger.info("Sorting BLEU scores...")
+    # sorted_output_file = os.path.join(scores_base, "sorted_compl_bleu_scores.jsonl")
+    # with open(output_file, 'r') as f, open(sorted_output_file, 'w') as file:
+    #         lines = f.readlines()
+    #         for line in lines:
+    #             obj = json.loads(line)
+    #             sorted_scores = sort_bleu_scores(obj["scores"])
+    #             # replace the scores with the sorted list
+    #             sorted_obj = {"exid": obj["exid"], "scores": sorted_scores}
+    #             json.dump(sorted_obj, file, ensure_ascii=False)
+    #             file.write("\n")
+    # f.close()
+    # file.close()
+    # logger.info("Sorted BLEU scores saved to %s", sorted_output_file)
     
     # Decoding losses
     logger.info("Decoding losses...")
-    losses_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
+    losses_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "losses")
 
     for i in range(NUM_TRIALS):
         np_losses_file = os.path.join(losses_base, f"{i}.npy")
@@ -119,7 +109,7 @@ def main(config_file):
         decoded_losses_file = os.path.join(losses_base, f"decoded/decoded_losses_trial_{i}.jsonl")
         output_dir = os.path.dirname(decoded_losses_file)
         os.makedirs(output_dir, exist_ok=True)
-        losses_to_jsonl(decoded_losses_file, data, tokenizer)
+        losses_to_jsonl(decoded_losses_file, data, tokenizer, exids)
 
         logger.info("Decoded losses saved to %s", decoded_losses_file)
 
