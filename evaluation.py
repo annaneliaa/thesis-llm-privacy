@@ -81,7 +81,7 @@ def main(config_file):
     for exid in exids:
         logger.info("Processing example %s...", exid)
         # get all scores for this example
-        scores = merge_bleu_scores(ROOT_DIR, NUM_TRIALS, exid)
+        scores = merge_bleu_scores(output_file, NUM_TRIALS, exid)
 
         json_object = {"exid": exid, "scores": scores}
 
@@ -107,8 +107,51 @@ def main(config_file):
     f.close()
     file.close()
     logger.info("Sorted BLEU scores saved to %s", sorted_output_file)
-
     
+    # Decoding losses
+    logger.info("Decoding losses...")
+    losses_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
+
+    for i in range(NUM_TRIALS):
+        np_losses_file = os.path.join(losses_base, f"{i}.npy")
+        data = np.load(np_losses_file)
+        logger.info("Data shape: %s", str(data.shape))
+        decoded_losses_file = os.path.join(losses_base, f"decoded/decoded_losses_trial_{i}.jsonl")
+        output_dir = os.path.dirname(decoded_losses_file)
+        os.makedirs(output_dir, exist_ok=True)
+        losses_to_jsonl(decoded_losses_file, data, tokenizer)
+
+        logger.info("Decoded losses saved to %s", decoded_losses_file)
+
+    # merge losses
+    loss_output_file = losses_base + "decoded/complete_losses.jsonl"
+    for exid in exids:
+        logger.info("Processing example %s...", exid)
+        # get all losses for this example
+        losses = merge_losses(loss_output_file, NUM_TRIALS, exid)
+
+        json_object = {"exid": exid, "losses": losses}
+
+        # Write the JSON object to the output file as a single line
+        with open(loss_output_file, 'a') as file:
+            json.dump(json_object, file, ensure_ascii=False)
+            file.write("\n")
+        file.close()
+        logger.info("Merged losses for exid %s", exid)
+
+    # Sort the losses of all examples
+    logger.info("Sorting losses...")
+    sorted_loss_output_file = losses_base + "decoded/sorted_compl_losses.jsonl"
+    with open(loss_output_file, 'r') as f, open(sorted_loss_output_file, 'w') as file:
+            lines = f.readlines()
+            for line in lines:
+                obj = json.loads(line)
+                sorted_losses = sort_losses(obj["losses"])
+                # replace the losses with the sorted list
+                sorted_obj = {"exid": obj["exid"], "losses": sorted_losses}
+                json.dump(sorted_obj, file, ensure_ascii=False)
+                file.write("\n")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process input from config file.")
     parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")

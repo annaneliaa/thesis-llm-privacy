@@ -31,10 +31,10 @@ def extract_translations_from_tmx(tmx_file, source_lang, target_lang, english_fi
             dutch_file.write(dutch_text + '\n')
 
 # Define directory containing .tmx files
-directory = 'ECDC'
+directory = './EMEA'
 
 # Define output directory for extracted texts
-output_dir = 'ECDC/extracted-texts'
+output_dir = './EMEA'
 
 # Create the directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
