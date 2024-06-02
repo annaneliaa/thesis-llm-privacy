@@ -8,6 +8,7 @@
 /wandb/
 /europarl/
 /ECDC/
+/ECB/
 
 # Python
 __pycache__/
@@ -42,3 +43,4 @@ ENV/
 *.pdf
 *.txt
 *.csv
+*.xml
