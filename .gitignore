@@ -3,7 +3,7 @@
 # Ignore all datasets directories for now
 /datasets/
 /nl-en/
-/DGT-TM-2016/
+/DGT-TM/
 /tmp/
 /wandb/
 /europarl/

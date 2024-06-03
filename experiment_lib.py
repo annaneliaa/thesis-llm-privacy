@@ -49,22 +49,23 @@ def generations_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exi
 
     print("Decoded strings saved to: %s", str(output_file_path))
 
-# Function to generate a jsonlines version of dataset
-# input here is a numpy array of tokenized data (using token IDs)
-def losses_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exids_file_path):
+# Function to generate a jsonlines version of scores for each example, for each trial
+def losses_to_jsonl(output_file_path: str, data: np.ndarray, exids):
     """Converts tokenized losses to a JSONL file at `path`."""
-
-    exids = generate_exid_list(exids_file_path)
     index = 0
 
     with open(output_file_path, "w", encoding="utf-8", newline='') as file:
-        for row in data:            
+        # loop over all rows in the trial
+        for row in data:     
+            # get the exid of the example from list       
             exid = int(exids[index])
 
-            score = row[0]
+            # scores are ordered
+            # convert to native python float
+            score = row[0].item()
     
             # Create a JSON object with a "text" field containing the line
-            json_object = {"exid": id,
+            json_object = {"exid": exid,
                            "loss": score}
 
             # Write the JSON object to the output file as a single line
@@ -78,14 +79,18 @@ def losses_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exids_fi
 # Using binary search to speed up the search when dealing with large datasets
 # returns a list of dicts with keys "trial" and "score"
 
-def merge_bleu_scores(directory, num_trials, curr_exid, logger):
+def merge_scores_or_losses(directory, trial_file_pattern, num_trials, curr_exid, logger, is_loss):
+    # to store scores or losses
     scores = []
+    # loop over all trials
     for i in range(num_trials):
-        trial_file = os.path.join(directory, f"bleu_scores_trial_{i}.jsonl")
+        # get the file path
+        trial_file = os.path.join(directory, trial_file_pattern + f"{i}.jsonl")
         if not os.path.exists(trial_file):
             logger.warning(f"File {trial_file} not found.")
             continue  # Skip if trial file doesn't exist
         with open(trial_file, 'r') as f:
+            # use binary search to find exid in file
             lines = f.readlines()
             scores_found = False
             low = 0
@@ -99,7 +104,10 @@ def merge_bleu_scores(directory, num_trials, curr_exid, logger):
                     logger.error(f"Error decoding JSON at line {mid} in {trial_file}: {e}")
                     break
                 if int(obj["exid"]) == curr_exid:
-                    score_obj = {"trial": i, "score": obj["score"]}
+                    if is_loss:
+                        score_obj = {"trial": i, "loss": obj["loss"]}
+                    else:
+                        score_obj = {"trial": i, "score": obj["score"]}
                     scores.append(score_obj)
                     scores_found = True
                     break
@@ -112,9 +120,6 @@ def merge_bleu_scores(directory, num_trials, curr_exid, logger):
                 # example found, move on to next file
                 continue
     return scores
-
-def merge_losses(directory, num_trials, curr_exid):
-    return 0
 
 def sort_losses(losses):
     return sorted(losses, key=lambda x: x["loss"], reverse=True)
