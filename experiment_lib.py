@@ -18,7 +18,7 @@ def generate_exid_list(file_path):
         print(f"An error occurred while reading {file_path}: {e}")
     return exids
 
-# Function to generate a jsonlines version of dataset
+# Function to generate a jsonlines version of model output
 # input here is a numpy array of tokenized data (using token IDs)
 def generations_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exids_file_path):
     """Converts the tokenized data to a JSONL file at `path`."""
