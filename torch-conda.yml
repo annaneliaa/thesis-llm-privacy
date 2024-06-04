@@ -33,4 +33,4 @@ dependencies:
         - matplotlib
         - torchmetrics
         - wandb
-
+        - happytransformer

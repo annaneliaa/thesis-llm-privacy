@@ -1,8 +1,8 @@
 {
-    "dataset_dir": "ECB",
-    "dataset_name": "ECB-c",
+    "dataset_dir": "EMEA",
+    "dataset_name": "EMEA-c",
     "language": "en",
     "token_length": 100,
     "target_dir": "./datasets",
-    "byte_offset_file": "ECB-c.en.csv"
+    "byte_offset_file": "EMEA-c.en.csv"
 }

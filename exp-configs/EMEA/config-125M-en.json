@@ -1,10 +1,10 @@
 {
     "root_dir": "tmp/",
-    "experiment_name": "nl-100-100-125M",
+    "experiment_name": "en-100-100-125",
     "dataset_dir": "EMEA",
-    "dataset_file": "EMEA-c",
+    "dataset_file": "EMEA-c.en",
     "num_trials": 100,
-    "language": "nl",
+    "language": "en",
     "split": "train",
     "suffix_len": 50,
     "prefix_len": 50,
