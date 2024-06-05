@@ -3,7 +3,7 @@ from IPython.display import display
 import os
 import json
 import argparse
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from experiment_lib import *
 from happytransformer import HappyGeneration, GENSettings
 from typing import Tuple, Union
@@ -77,9 +77,13 @@ model = config["model"]
 
 model_dir = os.path.join("models", DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
 
+#NOTE: Can this be optimized? doesnt seem ideal
 # Load model and tokenizer
 try:
-    MODEL = HappyGeneration(model_type="GPT-NEO", model_name=model_dir)
+    # Load the pretrained model for HappyTransformers
+    happy_gen = HappyGeneration(model_type="GPT-NEO", model_name=model_dir)
+    # Load the base model for calculating the loss
+    MODEL = AutoModelForCausalLM.from_pretrained(model)
     logger.info("Model loaded successfully.")
     tokenizer = AutoTokenizer.from_pretrained(model)
     logger.info("Tokenizer loaded successfully.")
@@ -100,7 +104,7 @@ def generate_for_prompts(
     losses = []
     generation_len = suffix_len + prefix_len
     args = GENSettings(
-        max_length=generation_len, do_sample=True, top_k=10, top_p=1, pad_token_id=50256
+        max_length=generation_len, do_sample=True, top_k=10, top_p=1
     )
 
     for i, off in enumerate(range(0, len(prompts), batch_size)):
@@ -111,9 +115,12 @@ def generate_for_prompts(
         input_ids = torch.tensor(prompt_batch, dtype=torch.int64).to(DEFAULT_DEVICE)
 
         with torch.no_grad():
-            generated_tokens = MODEL.generate_text(input_ids, args=args).to("cpu").detach()
+            result = happy_gen.generate_text(input_ids, args=args).to("cpu").detach()
+            
+            # Convert generated text to tokens
+            generated_tokens = tokenizer.encode(result.text, return_tensors="pt").to(DEFAULT_DEVICE)
 
-            # will this bit work??
+            # Evaluate output with Pytorch model
             outputs = MODEL(
                 generated_tokens.to(DEFAULT_DEVICE),
                 labels=generated_tokens.to(DEFAULT_DEVICE),
@@ -153,7 +160,7 @@ def main():
     os.makedirs(generations_base, exist_ok=True)
     losses_base = os.path.join(experiment_base, "losses")
     os.makedirs(losses_base, exist_ok=True)
-    prompts_base = os.path.join(SOURCE_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN))
+    prompts_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), model)
 
     logger.info("Loading prompts from numpy file")
     prompts = load_prompts(prompts_base, "train_prefix.npy")

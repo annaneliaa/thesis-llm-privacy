@@ -3,11 +3,15 @@ import numpy as np
 import json
 import logging
 from IPython.display import display
-from nltk.translate.bleu_score import sentence_bleu
+from nltk.translate.meteor_score import meteor_score
 import argparse
 import wandb
 from transformers import AutoTokenizer
 from experiment_lib import *
+import nltk
+
+# Meteor score requires wordnet to lookup synonyms
+nltk.download('wordnet')
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -16,7 +20,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 class JupyterHandler(logging.Handler):
     def emit(self, record):
         display(self.format(record))
-
 
 # Set up logger
 logger = logging.getLogger()
@@ -62,32 +65,14 @@ with open(args.config_file, "r") as f:
 
 tokenizer = AutoTokenizer.from_pretrained(model)
 
-# hide this key in ENV variable later
-# wandb.login(key="42d7bfea72fc95755780ef73c3aa17c520f5c5f0")
-
-# # Initialize wandb
-# wandb.init(
-#     project="thesis-llm-privacy",
-#     name="Calculation BLEU Score - " + EXPERIMENT_NAME + " - " + model,
-#     config={
-#         "experiment_name": EXPERIMENT_NAME,
-#         "dataset": DATASET_DIR,
-#         "language": LANGUAGE,
-#         "token_len": EXAMPLE_TOKEN_LEN,
-#         "prefix_len": PREFIX_LEN,
-#         "num_trials": NUM_TRIALS,
-#     },
-# )
-
-
-# Function to calculate the BLEU score between the reference and candidate text
-def calc_bleu_score(reference, candidate):
-    return sentence_bleu([reference], candidate)
+# Function to calculate the METEOR score between the reference and candidate text
+def calc_meteor_score(reference, candidate):
+    return meteor_score([reference], candidate)
 
 
 def main():
     logger.info(
-        "===== Starting BLEU-score calculation between generated and original text in language %s for %d prefix & suffix length =====",
+        "===== Starting METEOR-score calculation between generated and original text in language %s for %d prefix & suffix length =====",
         LANGUAGE,
         PREFIX_LEN,
     )
@@ -127,21 +112,22 @@ def main():
 
     # Create a directory to store the BLEU scores
     scores_base = os.path.join(
-        ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "scores"
+        ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "meteor_scores"
     )
+
     if not os.path.exists(scores_base):
         os.makedirs(scores_base)
 
     for trial in range(NUM_TRIALS):
-        logger.info("Starting BLEU-score calculation for trial %d", trial)
+        logger.info("Starting METEOR-score calculation for trial %d", trial)
 
         # Check if the file with BLEU scores for this trial already exists
-        bleu_scores_file = os.path.join(scores_base, f"bleu_scores_trial_{trial}.jsonl")
-        logger.info("Saving BLEU scores for trial %s to %s", trial, bleu_scores_file)
+        bleu_scores_file = os.path.join(scores_base, f"meteor_scores_trial_{trial}.jsonl")
+        logger.info("Saving METEOR scores for trial %s to %s", trial, bleu_scores_file)
 
         if os.path.exists(bleu_scores_file):
             logger.info(
-                "BLEU scores for trial %d previously calculated, skipping calculation",
+                "METEOR scores for trial %d previously calculated, skipping calculation",
                 trial,
             )
             continue
@@ -173,8 +159,13 @@ def main():
             prefix = json.loads(prefix_lines[index])["text"].strip()
             suffix = json.loads(suffix_lines[index])["text"].strip()
             reference = prefix + suffix
-            
-            score = calc_bleu_score(reference, candidate)
+
+            # Tokenize the reference and candidate text
+            reference = nltk.tokenize.word_tokenize(reference)
+            candidate = nltk.tokenize.word_tokenize(candidate)
+
+            # Calculate the METEOR score
+            score = calc_meteor_score(reference, candidate)
 
             # Log the BLEU score to wandb for plotting
             # wandb.log({"bleu_score": score, "trial": trial, "exid": exid})
@@ -188,7 +179,7 @@ def main():
                 json.dump(score_obj, file, ensure_ascii=False)
                 file.write("\n")
 
-        logger.info("Finished BLEU-score calculation for trial %d", trial)
+        logger.info("Finished METEOR-score calculation for trial %d", trial)
 
     # wandb.finish()
 

@@ -1,8 +1,8 @@
 {
     "root_dir": "tmp/",
-    "experiment_name": "nl-100-100-125M",
-    "dataset_dir": "EMEA",
-    "dataset_file": "EMEA-c",
+    "experiment_name": "nl-100-100-1.3B",
+    "dataset_dir": "europarl",
+    "dataset_file": "europarl-v7.nl-en.nl",
     "num_trials": 100,
     "language": "nl",
     "split": "train",
@@ -13,5 +13,5 @@
     "source_dir": "./datasets",
     "source_file": "train_dataset.npy",
     "batch_size": 32,
-    "model": "EleutherAI/gpt-neo-125M"
+    "model": "EleutherAI/gpt-neo-1.3B"
 }

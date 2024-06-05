@@ -34,3 +34,4 @@ dependencies:
         - torchmetrics
         - wandb
         - happytransformer
+        - plotly
