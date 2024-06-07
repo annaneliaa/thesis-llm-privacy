@@ -114,6 +114,8 @@ dataset = Dataset.from_dict({
     "attention_mask": attention_masks.tolist()
 })
 
+print(dataset[0])
+
 train_size = int(len(dataset) * 0.9)
 eval_size = len(dataset) - train_size
 
@@ -134,7 +136,7 @@ eval_dataset = dataset[eval_indices]
 with open(os.path.join(output_dir, "indices.json"), "w") as f:
     json.dump(
         {"train_indices": train_indices.tolist(), 
-         "eval_indices": eval_indices.tolist()}
+         "eval_indices": eval_indices.tolist()}, f
     )
             
 # train_dataset, eval_dataset = random_split(dataset, [train_size, eval_size])
@@ -153,7 +155,7 @@ trainer = Trainer(
     data_collator=default_data_collator
 )
 
-trainer.train()
+# trainer.train()
 
 # Save the model
 trainer.save_model(output_dir)

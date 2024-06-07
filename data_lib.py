@@ -364,17 +364,10 @@ def count_large_entries_json(json_file, max_tokens):
     return large_entry_count
 
 def reformat_dataset(json_file, dataset_file, output_file):
-    with open(json_file, "r", encoding="utf-8") as in_file, open(output_file, "w", encoding="utf-8") as outfile:
-        # Initialize new exid counter
-        new_exid = 1
-
-        # Read the dataset file into a list of lines
+    with open(json_file, "r", encoding="utf-8") as in_file, open(output_file, "w", encoding="utf-8") as outfile:       # Read the dataset file into a list of lines
         with open(dataset_file, 'r') as file:
             # this list will hold the dataset, starting at index 0
             dataset = file.readlines()
-        
-        # Get the total number of lines in the dataset
-        total_lines = len(dataset)
         
         # Read the input JSON file line by line
         lines = in_file.readlines()
@@ -386,20 +379,12 @@ def reformat_dataset(json_file, dataset_file, output_file):
             concat_sentence = ""
             for exid in exids:
                 concat_sentence += dataset[exid-1].strip() + " "
-            
+                
             # Remove trailing space
             concat_sentence = concat_sentence.strip()
-            
-            new_data = {
-                "exid": new_exid,
-                "text": concat_sentence
-            }
-
-            new_exid += 1  # Increment the exid for the next line
-            
+                        
             # Write the new JSON object to the output file
-            json.dump(new_data, outfile, ensure_ascii=False)
-            outfile.write("\n")
+            outfile.write(concat_sentence + "\n")
 
 # model training wants plain text, not npy so we converting concat trunc json version to plain text again
 def extract_text_from_json(json_file, output_txt_file):

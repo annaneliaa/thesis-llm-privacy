@@ -4,6 +4,8 @@ from IPython.display import display
 from transformers import AutoTokenizer
 from data_lib import *
 
+INF = float("inf")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -50,67 +52,57 @@ except Exception as e:
 
 def main():
     # Input: Two parallel datasets where each line is a sentence, in english and dutch (or LANG1 and LANG2)
-    # This script will preprocess the data and save it in a format that can be used by the model
-    # The data will be tokenized to count the number of tokens in each sentence
-    # Each sentence is assigned an example ID
-    # We balance the English and Dutch datasets by only keeping sentences that are at least the desired token length in both languages
+    # Assumption: the datasets are aligned, and will be used to train a model
+    # To increase the number of long sentences in the dataset, we concatenate sentences < desired token length
+    # Sentences that are long enough will not be concatenated
+    # Concatenating of sentences will be performed on the smallest dataset of the two to ensure identical sentence pairs
     # Output: A JSONL version of both datasets, aligned such that the set of example IDs is the same for both languages
-
-    logger.info("==== Sarting data preprocessing script ====")
+    
+    logger.info("==== Starting data preprocessing script ====")
     logger.info("This may take a while depending on the size of the dataset...")
+
     # Load the datasets
     dataset_base = os.path.join(config["dataset_dir"], config["dataset_name"])
 
     # Count the number of tokens in each sentence for both datasets
-    # Count the number of sentences that are at least the desired token length
-    # Filtering csv files on the basis of token length
-    # Generate JSONL version of the datasets for inspection
-    output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv")
+    csv_output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv")
+    min_count = (INF, "")
     for lang in languages:
         input_file = os.path.join(dataset_base + "." + lang)
-        output_file= os.path.join(output_file_pattern, DATASET_NAME + "." + lang + ".csv")
-        
+        output_file= os.path.join(csv_output_file_pattern, DATASET_NAME + "." + lang + ".csv")
+
         logger.info("Counting tokens for %s...", lang)
         generate_token_count_csv(input_file, output_file, tokenizer)
         
         count = count_large_entries(output_file, EXAMPLE_TOKEN_LEN)
         logger.info("Number of samples >= %s tokens in %s: %s", EXAMPLE_TOKEN_LEN, output_file, count) 
+    
+        if count < min_count[0]:
+            min_count = (count, lang)
+    
+    smallest_set = min_count[1]
 
-        # Filtering csv files on the basis of token length
-        logger.info("Filtering sentences for %s...", lang)
-        output_csv = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".csv")
-        filter_csv(output_file, output_csv, EXAMPLE_TOKEN_LEN)
+    # Concatenate sentences that are too short in the smallest dataset to ensure balance
+    in_file = os.path.join(csv_output_file_pattern, DATASET_NAME + "." + smallest_set + ".csv") 
+    out_file = os.path.join(SOURCE_DIR, DATASET_DIR, DATASET_NAME + "." + smallest_set + ".jsonl")
 
-        logger.info("Generating JSONL for %s...", lang)
-        text_to_jsonlines(input_file, os.path.join(input_file + ".jsonl"))
+    # Output file is in JSONL format
+    # Create new sentence pairs and record their new sizes
+    process_train_data(in_file, out_file,EXAMPLE_TOKEN_LEN)
 
-
-    # Compute common example IDs
-    csv_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + ".")
-    csv_file_lang1 = csv_file_pattern + languages[0] + ".csv"
-    csv_file_lang2 = csv_file_pattern + languages[1] + ".csv"
-    output_csv = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", "common_exids-" + str(EXAMPLE_TOKEN_LEN) + ".csv")
-
-    common_exids = find_common_exids(csv_file_lang1, csv_file_lang2)
-    write_exids_to_file(common_exids, output_csv)
-    logger.info(f"Common exids have been written to {output_csv}")
-
-    # Filter the datasets to only include the common example IDs
-    # Truncate sentences to the desired token length
-    exid_list = read_common_exids(output_csv)
-    logger.info("%s common example IDs found", len(exid_list))
-
+    new_sample_count = count_large_entries_json(out_file, EXAMPLE_TOKEN_LEN)
+    logger.info("Concatenated sentences in %s to reach %s samples >= %s tokens", smallest_set, new_sample_count, EXAMPLE_TOKEN_LEN)
+    
+    # Create concatenated version for the datasets
+    # JSONL format, aligned on example IDs
+    logger.info("Generating JSONL for both languages...")
     for lang in languages:
-        input_file = os.path.join(dataset_base + "." + lang)
-        trunc_json_file = os.path.join(DATASET_DIR, DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".jsonl")
-        
-        trunc_json(os.path.join(input_file + ".jsonl"), trunc_json_file, EXAMPLE_TOKEN_LEN, exid_list, tokenizer)
-        
-        # JSONL version of the complete dataset is no longer needed
-        os.remove(input_file + ".jsonl")
+        reformat_dataset(out_file, 
+                         os.path.join(dataset_base + "." + lang),
+                         os.path.join(dataset_base + "-c." + lang)
+        )
 
-
-    logger.info("==== Data preprocessing script completed ====")
-
+    logger.info("==== Data preprocessing complete ====")
+    
 if __name__ == "__main__":
     main()
