@@ -135,15 +135,15 @@ def filter_and_truncate_sentences(input_file, output_file, max_tokens, tokenizer
 # Columns are exid and size
 # Exid is determined by the line number in the original dataset
 # Inspired by Carlini code
-def generate_byte_dataset(source_dir, input_file, output_file, tokenizer):
+def generate_token_count_csv(input_file, output_file, tokenizer):
     print("Generating byte offset dataset from file: ", input_file)
     with open(input_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
+    
+    output_dir = os.path.dirname(output_file)  # Get the directory part of output_file
+    os.makedirs(output_dir, exist_ok=True)  # Create the directory
 
-    if not os.path.exists(source_dir):
-        os.makedirs(source_dir)
-
-    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
+    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:  # Open the file in the created directory
         csv_writer = csv.writer(csvfile)
         csv_writer.writerow(["exid", "size"])
 
@@ -296,7 +296,7 @@ def trunc_json(input_file, output_file, max_tokens, exid_list, tokenizer):
                 tokens = tokenizer.tokenize(sentence)
             
                 # Truncate the tokenized sentece to max amount of tokens
-                truncated_sentence = truncate_tokens(tokens, max_tokens)
+                truncated_sentence = truncate_tokens(tokens, max_tokens, tokenizer)
 
                 trunc_obj = {"exid": exid,
                              "text": truncated_sentence}
