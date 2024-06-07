@@ -4,28 +4,46 @@ import json
 import argparse
 import numpy as np
 from transformers import (
-    AutoTokenizer,
+    CONFIG_MAPPING,
+    MODEL_FOR_CAUSAL_LM_MAPPING,
     AutoModelForCausalLM,
+    AutoTokenizer,
     Trainer,
     TrainingArguments,
-    IntervalStrategy,
-    default_data_collator
+    default_data_collator,
+    set_seed,
+    IntervalStrategy
 )
 import torch
-from torch.utils.data import random_split
+from transformers.trainer_utils import get_last_checkpoint, is_main_process
+from transformers.utils import check_min_version
 import numpy as np
 from datasets import Dataset
+import wandb
+from train_lib import *
 
-torch.manual_seed(42)
+import math
+import sys
+from dataclasses import dataclass, field
+from typing import Optional
+from pathlib import Path
+
+from datasets import load_dataset, Dataset
 
 # Configure Python's logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%m/%d/%Y %H:%M:%S",
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
-
 # Set up logger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+# Tracking runs with wandb
+wandb_key = os.getenv("WANDB_API_KEY")
+wandb.login(key=wandb_key)
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Process config input.")
@@ -58,35 +76,86 @@ else:
 
 logger.info(f"Default device: {DEFAULT_DEVICE}")
 
+# Set seed before loading the model
+set_seed(config["seed"])
+
+# output dir for trained models, and training/eval files
+output_dir = os.path.join("finetuned", config["dataset_dir"], config["experiment_name"])
+# Create the output directory if it doesn't exist
+os.makedirs(output_dir, exist_ok=True)
+
+# Load dataset
+dataset_path = os.path.join(
+    config["dataset_dir"], config["dataset_name"] + "." + config["language"]
+)
+
+eval_percentage = config["validation_split_percentage"]
+split_set_to_train_val(eval_percentage, dataset_path, output_dir, config)
+
+logger.info("Created train.csv and validation.csv files.")
+
+data_files = {}
+if config["train_file"] is not None:
+    data_files["train"] = config["train_file"]
+if config["validation_file"] is not None:
+    data_files["validation"] = config["validation_file"]
+
+# take file extension of the training file, else of the validation file
+# do you need this?
+extension = (
+    config["validation_file"].split(".")[-1]
+    if config["validation_file"] is not None
+    else config["validation_file"].split(".")[-1]
+)
+if extension == "txt":
+    extension = "text"
+# Create hugging face dataset objects for training and validation
+datasets = load_dataset(extension, data_files=data_files)
+
 # Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(config["model"])
 model = AutoModelForCausalLM.from_pretrained(config["model"])
 # Move model to GPU if possible
-model.to(DEFAULT_DEVICE).half().eval()
+# model.to(DEFAULT_DEVICE).half().eval()
 
-# Load tokenized dataset
-dataset_base = os.path.join(
-    config["source_dir"],
-    config["dataset_dir"],
-    config["language"],
-    str(config["example_token_len"]),
-    config["model"],
-    "train_dataset.npy",
+# Preprocess datasets
+column_names = datasets["train"].column_names
+text_column_name = "text" if "text" in column_names else column_names[0]
+
+
+def tokenize_function(examples):
+    return tokenizer(examples[text_column_name])
+
+
+tokenized_datasets = datasets.map(
+    tokenize_function, batched=True, remove_columns=column_names, num_proc=4
 )
 
-tokenized_dataset = np.load(dataset_base).astype(np.int64)
-attention_masks = (tokenized_dataset != 0)
-attention_masks = torch.tensor(attention_masks)
-logger.info("Loaded dataset: %s and created attentio masks", dataset_base)
+block_size = tokenizer.model_max_length
 
-output_dir = os.path.join("finetuned", config["experiment_name"])
-# Create the output directory if it doesn't exist
-os.makedirs(output_dir, exist_ok=True)
 
-# all sentence are same lenght for now
-# find the longest sequence in the dataset
-# max_len = max([len(seq) for seq in tokenized_dataset])
-# logger.info("Max sequence length:%s", max_len)
+# Main data processing function that will concatenate all texts from our dataset and generate chunks of block_size.
+def group_texts(examples):
+    # Concatenate all texts.
+    concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
+    total_length = len(concatenated_examples[list(examples.keys())[0]])
+    # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
+    # customize this part to your needs.
+    total_length = (total_length // block_size) * block_size
+    # Split by chunks of max_len.
+    result = {
+        k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
+        for k, t in concatenated_examples.items()
+    }
+    result["labels"] = result["input_ids"].copy()
+    return result
+
+
+lm_datasets = tokenized_datasets.map(
+    group_texts,
+    batched=True,
+    num_proc=4,
+)
 
 # Training arguments
 training_args = TrainingArguments(
@@ -108,55 +177,41 @@ training_args = TrainingArguments(
     deepspeed=args.deepspeed_config,
 )
 
-# Convert the numpy array to a Hugging Face Dataset
-dataset = Dataset.from_dict({
-    "input_ids": tokenized_dataset.tolist(),
-    "attention_mask": attention_masks.tolist()
-})
+train_dataset = lm_datasets["train"]
+eval_dataset = lm_datasets["validation"]
 
-print(dataset[0])
-
-train_size = int(len(dataset) * 0.9)
-eval_size = len(dataset) - train_size
-
-# Create a range of indices to map to exids later
-indices = list(range(len(dataset)))
-
-# Split the indices along with the dataset
-train_indices, eval_indices = random_split(indices, [train_size, eval_size])
-# Convert the indices to numpy arrays for easier indexing
-train_indices = np.array(train_indices)
-eval_indices = np.array(eval_indices)
-
-# Create the train and eval datasets using the indices
-train_dataset = dataset[train_indices]
-eval_dataset = dataset[eval_indices]
-
-# Save indices to a file
-with open(os.path.join(output_dir, "indices.json"), "w") as f:
-    json.dump(
-        {"train_indices": train_indices.tolist(), 
-         "eval_indices": eval_indices.tolist()}, f
-    )
-            
-# train_dataset, eval_dataset = random_split(dataset, [train_size, eval_size])
-
-train_batch = np.stack(train_dataset, axis=0)
+# Initialize our Trainer
 trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=train_dataset,
     eval_dataset=eval_dataset,
     tokenizer=tokenizer,
-    # data_collator={
-    #     "input_ids": lambda data: torch.tensor(data["input_ids"], dtype=torch.int64),
-    #     "attention_mask": lambda data: torch.tensor(data["attention_mask"]),
-    # }
-    data_collator=default_data_collator
+    # Data collator will default to DataCollatorWithPadding, so we change it.
+    data_collator=default_data_collator,
 )
 
-# trainer.train()
+# Training
+train_result = trainer.train(resume_from_checkpoint=None)
 
-# Save the model
+metrics = train_result.metrics
+
+metrics["train_samples"] = len(train_dataset)   
+
+trainer.log_metrics("train", metrics)
+trainer.save_metrics("train", metrics)
+trainer.save_state()
+
+# Evaluation
+metrics = trainer.evaluate()
+metrics["eval_samples"] = len(eval_dataset)
+perplexity = math.exp(metrics["eval_loss"])
+metrics["perplexity"] = perplexity
+
+trainer.log_metrics("eval", metrics)
+trainer.save_metrics("eval", metrics)
+
+# Save model
 trainer.save_model(output_dir)
-logger.info("Training completed and model saved.")
+
+logger.info("====== Done ======")

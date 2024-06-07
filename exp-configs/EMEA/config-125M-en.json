@@ -2,7 +2,7 @@
     "root_dir": "tmp/",
     "experiment_name": "en-100-100-125M",
     "dataset_dir": "EMEA",
-    "dataset_file": "EMEA-c",
+    "dataset_name": "EMEA-c-100",
     "num_trials": 100,
     "language": "en",
     "split": "train",
@@ -13,5 +13,9 @@
     "source_dir": "./datasets",
     "source_file": "train_dataset.npy",
     "batch_size": 32,
-    "model": "EleutherAI/gpt-neo-125M"
+    "model": "EleutherAI/gpt-neo-125M",
+    "train_file": "finetuned/EMEA/en-100-100-125M/train-en.txt",
+    "validation_file": "finetuned/EMEA/en-100-100-125M/eval-en.txt",
+    "validation_split_percentage": 0.1,
+    "seed": 42
 }
