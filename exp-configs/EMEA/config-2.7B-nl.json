@@ -1,8 +1,9 @@
 {
     "root_dir": "tmp/",
-    "experiment_name": "nl-100-100-2.7B",
     "dataset_dir": "EMEA",
-    "dataset_file": "EMEA-c",
+    "source_dir": "./datasets",
+    "dataset_name": "EMEA-c-100",
+    "experiment_name": "nl-100-100-2.7B",
     "num_trials": 100,
     "language": "nl",
     "split": "train",
@@ -10,8 +11,11 @@
     "prefix_len": 50,
     "example_token_len": 100,
     "preprefix_len": 0,
-    "source_dir": "./datasets",
     "source_file": "train_dataset.npy",
     "batch_size": 32,
-    "model": "EleutherAI/gpt-neo-2.7B"
+    "model": "EleutherAI/gpt-neo-2.7B",
+    "train_file": "EMEA/train-nl.txt",
+    "validation_file": "EMEA/validation-nl.txt",
+    "validation_split_percentage": 0.1,
+    "seed": 42
 }

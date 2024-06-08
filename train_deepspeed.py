@@ -20,7 +20,7 @@ from transformers.utils import check_min_version
 import numpy as np
 from datasets import Dataset
 import wandb
-from train_lib import *
+from experiment_lib import *
 
 import math
 import sys

@@ -2,6 +2,10 @@ import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
+import os
+import torch
+from torch.utils.data import random_split
 
 def is_file_empty(file_path):
     return os.path.getsize(file_path) == 0
@@ -172,3 +176,103 @@ def get_shape(arr):
     if isinstance(arr, np.ndarray):
         return arr.shape
     return None
+
+def load_constants_from_config(config):
+    # For saving results
+    ROOT_DIR = config["root_dir"]
+    # Name of the dataset
+    DATASET_DIR = config["dataset_dir"]
+    # Directory where the .npy files of the dataset are stored
+    SOURCE_DIR = config["source_dir"]
+    # Name of the dataset
+    DATASET_NAME = config["dataset_name"]
+    # Name of the experiment
+    EXPERIMENT_NAME = config["experiment_name"]
+    # Number of trials
+    NUM_TRIALS = config["num_trials"]
+    # Language of the scenario (EN/NL)
+    LANGUAGE = config["language"]
+    # Split the dataset into train and eval
+    SPLIT = config["split"]
+    # Length of the suffix
+    SUFFIX_LEN = config["suffix_len"]
+    # Length of the prefix
+    PREFIX_LEN = config["prefix_len"]
+    # Number of tokens in the complete sequences
+    EXAMPLE_TOKEN_LEN = config["example_token_len"]
+    # Preprefix length
+    PREPREFIX_LEN = config["preprefix_len"]
+    # Name of the tokenized .npy file of the dataset
+    SOURCE_FILE = config["source_file"]
+    # Batch size for feeding prompts to the model
+    BATCH_SIZE = config["batch_size"]
+    # Name of the model to use
+    MODEL_NAME = config["model"]
+    TRAIN_FILE = config["train_file"]
+    VAL_FILE = config["validation_file"]
+    VAL_SPLIT = config["validation_split_percentage"]
+    SEED = config["seed"]
+
+    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, VAL_SPLIT, SEED)
+
+
+
+def text_to_csv(dir, train_file, val_file):
+    with open(train_file, encoding='utf-8') as txtfile:
+        all_text = txtfile.read()
+    with open(os.path.join(dir, 'train.csv'), mode='w', encoding='utf-8') as csv_file:
+        fieldnames = ['text']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({'text': all_text})
+
+
+    with open(val_file, encoding='utf-8') as txtfile:
+        all_text = txtfile.read()
+    with open(os.path.join(dir, 'validation.csv'), mode='w', encoding='utf-8') as csv_file:
+        fieldnames = ['text']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({'text': all_text})
+
+def split_set_to_train_val(eval_percentage, output_dir, dataset_path, language):
+    train_out_file = os.path.join(output_dir, "train-" + language + ".txt")
+    val_out_file = os.path.join(output_dir, "evaluation-" + language + ".txt")
+    indices_file = os.path.join(output_dir, "split_indices-" + language + ".json")
+
+    # Check if the files already exist
+    if os.path.exists(train_out_file) and os.path.exists(val_out_file) and os.path.exists(indices_file):
+        print("Files already exist. Skipping computation.")
+        return
+
+    # Load the dataset
+    with open(dataset_path, "r") as f:
+        dataset = f.readlines()
+
+    train_size = int(len(dataset) * (1- eval_percentage))
+    eval_size = len(dataset) - train_size
+
+    # Create a range of indices to map to exids later
+    indices = list(range(len(dataset)))
+
+    # Split the indices along with the dataset
+    train_indices, eval_indices = random_split(indices, [train_size, eval_size])
+
+    # Create the train and eval datasets using the indices
+    train_dataset = [dataset[i] for i in train_indices]
+    eval_dataset = [dataset[i] for i in eval_indices]
+
+    # Save train and eval datasets to files
+    with open(train_out_file, "w") as f:
+        f.writelines(train_dataset)
+
+    with open(val_out_file, "w") as f:
+        f.writelines(eval_dataset)
+
+    # Convert Subset objects to lists
+    train_indices = train_indices.indices
+    eval_indices = eval_indices.indices
+
+    # Save indices to file in JSON format
+    with open(indices_file, "w") as f:
+        json.dump({"train": train_indices, "eval": eval_indices}, f)
