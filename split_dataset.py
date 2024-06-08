@@ -5,6 +5,7 @@ import argparse
 from transformers import AutoTokenizer
 import logging
 from IPython.display import display
+from experiment_lib import load_constants_from_config
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
@@ -30,66 +31,65 @@ args = parser.parse_args()
 with open(args.config_file, "r") as f:
     config = json.load(f)
 
-# For saving results
-ROOT_DIR = config["root_dir"]
-# Name of the dataset
-DATASET_DIR = config["dataset_dir"]
-# Directory where the .npy files of the dataset are stored
-SOURCE_DIR = config["source_dir"]
-# Name of the dataset
-DATASET_FILE = config["dataset_file"]
-# Name of the experiment
-EXPERIMENT_NAME = config["experiment_name"]
-# Number of trials
-NUM_TRIALS = config["num_trials"]
-# Length of the prefix
-PREFIX_LEN = config["prefix_len"]
-# Length of the suffix
-SUFFIX_LEN = config["suffix_len"]
-# Preprefix length
-PREPREFIX_LEN = config["preprefix_len"]
-# Language of the scenario (EN/NL)
-LANGUAGE = config["language"]
-# Number of tokens in the complete sequences
-EXAMPLE_TOKEN_LEN = config["example_token_len"]
-# Batch size for feeding prompts to the model
-BATCH_SIZE = config["batch_size"]
-# Split of the dataset to use (train/val/test)
-SPLIT = config["split"]
-# Name of the model to use
-model = config["model"]
+(
+    ROOT_DIR, 
+    DATASET_DIR, 
+    SOURCE_DIR, 
+    DATASET_NAME, 
+    EXPERIMENT_NAME, 
+    NUM_TRIALS, 
+    PREFIX_LEN, 
+    SUFFIX_LEN, 
+    PREPREFIX_LEN, 
+    LANGUAGE, 
+    SPLIT, 
+    EXAMPLE_TOKEN_LEN, 
+    SOURCE_FILE, 
+    BATCH_SIZE, 
+    MODEL_NAME, 
+    TRAIN_FILE, 
+    VAL_FILE, 
+    VAL_SPLIT, 
+    SEED
+) = load_constants_from_config(config)
 
 # Set up tokenizer
-tokenizer = AutoTokenizer.from_pretrained(model)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 tokenizer.add_special_tokens({"pad_token": ""})
 
 def main():
+    # Input: A dataset file with sentences in a specific language in JSONL format
+    # This script will tokenize the sentences and save the token sequences in .npy files
+    # Output: .npy files with the token sequences, split into preprefix, prefix, and suffix
+    # The .npy files will be saved in the source directory
+    # A tokenized version of the complete dataset will also be saved in the source directory
     logger.info(
         "===== Starting dataset token split generation for language %s with token length %s =====",
         LANGUAGE,
         EXAMPLE_TOKEN_LEN,
     )
 
-    europarl_files = [
+    # SPLIT = TRAIN, so we are processing training dataset for step 2 now!!!
+    ds_files = [
         open(
             DATASET_DIR
             + "/"
-            + DATASET_FILE
-            + "-"
-            + str(EXAMPLE_TOKEN_LEN)
+            + DATASET_NAME
             + "."
             + LANGUAGE
+            + "-"
+            + SPLIT
             + ".jsonl"
         )
     ]
 
-    logger.info("Opened file: %s", str(europarl_files[0].name))
+    logger.info("Opened file: %s", str(ds_files[0].name))
 
     prompts = {}
     line_count = 0
 
-    for europarl_file in europarl_files:
-        line = europarl_file.readline()
+    for file in ds_files:
+        line = file.readline()
         while line:
             json_obj = json.loads(line)
             exid = json_obj["exid"]
@@ -107,12 +107,12 @@ def main():
             if line_count % BATCH_SIZE == 0:
                 logger.info("Processed %d lines", line_count)
 
-            line = europarl_file.readline()
+            line = file.readline()
 
     if not os.path.exists(SOURCE_DIR):
         os.mkdir(SOURCE_DIR)
 
-    npy_arrays_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), model)
+    npy_arrays_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), MODEL_NAME)
     os.makedirs(npy_arrays_base, exist_ok=True)
 
     prompts = [x[1] for x in sorted(prompts.items())]

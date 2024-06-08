@@ -216,7 +216,6 @@ def load_constants_from_config(config):
     return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, VAL_SPLIT, SEED)
 
 
-
 def text_to_csv(dir, train_file, val_file):
     with open(train_file, encoding='utf-8') as txtfile:
         all_text = txtfile.read()
@@ -237,7 +236,7 @@ def text_to_csv(dir, train_file, val_file):
 
 def split_set_to_train_val(eval_percentage, output_dir, dataset_path, language):
     train_out_file = os.path.join(output_dir, "train-" + language + ".txt")
-    val_out_file = os.path.join(output_dir, "evaluation-" + language + ".txt")
+    val_out_file = os.path.join(output_dir, "validation-" + language + ".txt")
     indices_file = os.path.join(output_dir, "split_indices-" + language + ".json")
 
     # Check if the files already exist
@@ -276,3 +275,25 @@ def split_set_to_train_val(eval_percentage, output_dir, dataset_path, language):
     # Save indices to file in JSON format
     with open(indices_file, "w") as f:
         json.dump({"train": train_indices, "eval": eval_indices}, f)
+
+    # Generate JSONL version of the training set for extraction
+    # open JSONL version of the whole dataset
+    with open(os.path.join(dataset_path + ".jsonl") , "r") as f, open(indices_file, "r") as indices_file:
+        # Read all lines into a list
+        dataset_jsonl = f.readlines()
+
+        output_file = os.path.join(dataset_path + "-train.jsonl")
+        print(f"Output file: {output_file}")  # Debug print
+
+        with open(output_file, "w") as out_file:
+
+            # iterate over all train_indices
+            train_indices = json.load(indices_file)["train"]
+            print(f"Train indices: {train_indices}")  # Debug print
+
+            for index in train_indices:
+                json_obj = json.loads(dataset_jsonl[index])
+                json.dump(json_obj, out_file, ensure_ascii=False)      
+                out_file.write("\n")
+
+    print("Done writing file")  # Debug print   

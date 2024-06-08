@@ -47,33 +47,28 @@ else:
 
 logger.info(f"Default device: {DEFAULT_DEVICE}")
 
-# For saving results
-ROOT_DIR = config["root_dir"]
-# Name of the dataset
-DATASET_DIR = config["dataset_dir"]
-# Directory where the .npy files of the dataset are stored
-SOURCE_DIR = config["source_dir"]
-# Name of the experiment
-EXPERIMENT_NAME = config["experiment_name"]
-# Name of the dataset
-DATASET_FILE = config["dataset_file"]
-# Number of trials
-NUM_TRIALS = config["num_trials"]
-# Length of the prefix
-PREFIX_LEN = config["prefix_len"]
-# Length of the suffix
-SUFFIX_LEN = config["suffix_len"]
-# Preprefix length
-PREPREFIX_LEN = config["preprefix_len"]
-# Language of the scenario (EN/NL)
-LANGUAGE = config["language"]
-# Number of tokens in the complete sequences
-EXAMPLE_TOKEN_LEN = config["example_token_len"]
-# Batch size for feeding prompts to the model
-BATCH_SIZE = config["batch_size"]
-# Name of the model to use
-model = config["model"]
-
+# Load constants from config
+(
+    ROOT_DIR, 
+    DATASET_DIR, 
+    SOURCE_DIR, 
+    DATASET_NAME, 
+    EXPERIMENT_NAME, 
+    NUM_TRIALS, 
+    PREFIX_LEN, 
+    SUFFIX_LEN, 
+    PREPREFIX_LEN, 
+    LANGUAGE, 
+    SPLIT, 
+    EXAMPLE_TOKEN_LEN, 
+    SOURCE_FILE, 
+    BATCH_SIZE, 
+    MODEL_NAME, 
+    TRAIN_FILE, 
+    VAL_FILE, 
+    VAL_SPLIT, 
+    SEED
+) = load_constants_from_config(config)
 
 model_dir = os.path.join("models", DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
 
@@ -83,17 +78,17 @@ try:
     # Load the pretrained model for HappyTransformers
     happy_gen = HappyGeneration(model_type="GPT-NEO", model_name=model_dir)
     # Load the base model for calculating the loss
-    MODEL = AutoModelForCausalLM.from_pretrained(model)
+    MODEL = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
     logger.info("Model loaded successfully.")
-    tokenizer = AutoTokenizer.from_pretrained(model)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     logger.info("Tokenizer loaded successfully.")
 except Exception as e:
     logger.error(f"Error loading model or tokenizer: {e}")
     raise
 
-logger.info("Experiment name: %s", config["experiment_name"])
-logger.info("Language: %s", config["language"])
-logger.info("Model: %s", config["model"])
+logger.info("Experiment name: %s", EXPERIMENT_NAME)
+logger.info("Language: %s", LANGUAGE)
+logger.info("Model: %s", MODEL_NAME)
 
 # modified function for happy transformer trained model
 def generate_for_prompts(
