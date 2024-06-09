@@ -84,21 +84,22 @@ logger.info(f"Default device: {DEFAULT_DEVICE}")
 # As we random split the dataset
 set_seed(SEED)
 
-# def print_gpu_utilization():
-#     nvmlInit()
-#     handle = nvmlDeviceGetHandleByIndex(0)
-#     info = nvmlDeviceGetMemoryInfo(handle)
-#     print(f"GPU memory occupied: {info.used//1024**2} MB.")
+def print_gpu_utilization():
+    nvmlInit()
+    handle = nvmlDeviceGetHandleByIndex(0)
+    info = nvmlDeviceGetMemoryInfo(handle)
+    print(f"GPU memory occupied: {info.used//1024**2} MB.")
 
-# def print_summary(result):
-#     print(f"Time: {result.metrics['train_runtime']:.2f}")
-#     print(f"Samples/second: {result.metrics['train_samples_per_second']:.2f}")
-#     print_gpu_utilization()
+def print_summary(result):
+    print(f"Time: {result.metrics['train_runtime']:.2f}")
+    print(f"Samples/second: {result.metrics['train_samples_per_second']:.2f}")
+    print_gpu_utilization()
 
 logger.info("==== Starting trainer script ====")
 
-# print_gpu_utilization()
+logger.info("Experiment name %s", EXPERIMENT_NAME)
 
+logger.info("Loading model...")
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(
     DEFAULT_DEVICE
 )
@@ -163,6 +164,12 @@ output_dir = os.path.join("finetuned", DATASET_DIR, EXPERIMENT_NAME)
 default_args = {
     "output_dir": output_dir,
     "evaluation_strategy": "steps",
+    "eval_steps": 1000,
+    "save_steps": 1000,
+    "save_total_limit": 3,
+    "load_best_model_at_end": True,
+    "metric_for_best_model": "eval_loss",
+    "greater_is_better": False,
     "num_train_epochs": 1,
     "log_level": "error",
     "report_to": "none",
@@ -185,7 +192,7 @@ trainer = Trainer(
 result = trainer.train()
 logger.info("Training finished.")
 
-# print_summary(result)
+print_summary(result)
 
 # Save model and tokenizer
 trainer.save_model(
