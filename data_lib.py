@@ -357,18 +357,17 @@ def group_sentences(byte_offset_csv, output_file, groups=4):
     # Read the byte offset CSV file
     with open(byte_offset_csv, "r", newline='', encoding="utf-8") as csvfile:
         with open(output_file, "a", newline='', encoding="utf-8") as out_file:
-            csv_reader = list(csv.DictReader(csvfile))
+            csv_reader = list(csv.reader(csvfile))
             idx = 0
             while idx < len(csv_reader):
                 ids = []
                 size = 0
-
                 # Group 4 sentences together
                 for _ in range(groups):
                     if idx < len(csv_reader):
-                        exid = int(csv_reader[idx]["exid"])
+                        exid = int(csv_reader[idx][0])
                         ids.append(exid)
-                        size += int(csv_reader[idx]["size"])
+                        size += int(csv_reader[idx][1])
                         idx += 1
                     else:
                         # EOF, not enough sentences left to group
@@ -387,11 +386,12 @@ def filter_large_entries(input_file, output_file, desired_token_length):
          open(temp_file, "w", encoding="utf-8") as temp:
         
         # Read input file
-        csv_reader = list(csv.DictReader(input_file))
-        idx = 0
-        while idx < len(csv_reader):
-            exid = int(csv_reader[idx]["exid"])
-            size = int(csv_reader[idx]["size"])
+        csv_reader = csv.reader(in_file)
+        # skip header row
+        next(csv_reader)
+        for row in csv_reader:
+            exid = int(row[0])
+            size = int(row[1])
 
             if size >= desired_token_length:
                 json_object = {"exid": exid, "size": size}
@@ -403,6 +403,7 @@ def filter_large_entries(input_file, output_file, desired_token_length):
     # Replace the original file with the temporary file
     os.remove(input_file)
     os.rename(temp_file, input_file)
+
 
 def count_large_entries_json(json_file, max_tokens):
     # Open the JSON file for reading
@@ -440,7 +441,11 @@ def reformat_dataset(json_file, dataset_file, output_file):
             # Parse the JSON object
             data = json.loads(line)
             exids = data["exid"]
-            
+
+            # Ensure exids is a list (for sentences that werent concatenated)
+            if not isinstance(exids, list):
+                exids = [exids]
+                    
             concat_sentence = ""
             for exid in exids:
                 concat_sentence += dataset[exid-1].strip() + " "
