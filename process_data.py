@@ -65,7 +65,7 @@ def main():
     # Count the number of sentences that are at least the desired token length
     # Filtering csv files on the basis of token length
     # Generate JSONL version of the datasets for inspection
-    csv_output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv")
+    csv_output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN))
     for lang in languages:
         input_file = os.path.join(dataset_base + "." + lang)
         output_file= os.path.join(csv_output_file_pattern, DATASET_NAME + "." + lang + ".csv")
@@ -74,22 +74,21 @@ def main():
         generate_token_count_csv(input_file, output_file, tokenizer)
         
         count = count_large_entries(output_file, EXAMPLE_TOKEN_LEN)
-        logger.info("Number of samples >= %s tokens in %s: %s", EXAMPLE_TOKEN_LEN, output_file, count) 
+        logger.info("Number of samples >= %s tokens in %s: %s", str(EXAMPLE_TOKEN_LEN), output_file, count) 
 
         # Filtering csv files on the basis of token length
         logger.info("Filtering sentences for %s...", lang)
-        output_csv = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".csv")
+        output_csv = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".csv")
         filter_csv(output_file, output_csv, EXAMPLE_TOKEN_LEN)
 
         logger.info("Generating JSONL for %s...", lang)
         text_to_jsonlines(input_file, os.path.join(input_file + ".jsonl"))
 
-
     # Compute common example IDs
-    csv_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + ".")
+    csv_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + ".")
     csv_file_lang1 = csv_file_pattern + languages[0] + ".csv"
     csv_file_lang2 = csv_file_pattern + languages[1] + ".csv"
-    output_csv = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", "common_exids-" + str(EXAMPLE_TOKEN_LEN) + ".csv")
+    output_csv = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), "common_exids-" + str(EXAMPLE_TOKEN_LEN) + ".csv")
 
     common_exids = find_common_exids(csv_file_lang1, csv_file_lang2)
     write_exids_to_file(common_exids, output_csv)
@@ -102,7 +101,7 @@ def main():
 
     for lang in languages:
         input_file = os.path.join(dataset_base + "." + lang)
-        trunc_json_file = os.path.join(DATASET_DIR, DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".jsonl")
+        trunc_json_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".jsonl")
         
         trunc_json(os.path.join(input_file + ".jsonl"), trunc_json_file, EXAMPLE_TOKEN_LEN, exid_list, tokenizer)
         

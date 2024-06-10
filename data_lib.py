@@ -137,6 +137,11 @@ def filter_and_truncate_sentences(input_file, output_file, max_tokens, tokenizer
 # Inspired by Carlini code
 def generate_token_count_csv(input_file, output_file, tokenizer):
     print("Generating byte offset dataset from file: ", input_file)
+
+    # if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+    #     print(f"The file '{output_file}' already exists and is not empty. Skipping generation.")
+    #     return
+        
     with open(input_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
     
@@ -208,6 +213,10 @@ def text_to_jsonlines(input_file, output_file):
 # output file is a CSV file with the same columns as the input file
 # only rows with a size greater than or equal to min_size are kept
 def filter_csv(input_file, output_file, min_size):
+
+    # Create output file if not exist yet
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
     # Open the input CSV file for reading
     with open(input_file, mode='r', newline='', encoding='utf-8') as infile:
         # Create a CSV reader object
@@ -342,6 +351,59 @@ def process_train_data(byte_offset_csv, output_file, max_tokens):
                         # Skip to the next line
                         idx += 1
 
+# function to concat sentences in dataset to get more examples with >= desired token length
+# uses the byte offset csv file for faster processing
+def group_sentences(byte_offset_csv, output_file, groups=4):
+    # Read the byte offset CSV file
+    with open(byte_offset_csv, "r", newline='', encoding="utf-8") as csvfile:
+        with open(output_file, "a", newline='', encoding="utf-8") as out_file:
+            csv_reader = list(csv.DictReader(csvfile))
+            idx = 0
+            while idx < len(csv_reader):
+                ids = []
+                size = 0
+
+                # Group 4 sentences together
+                for _ in range(groups):
+                    if idx < len(csv_reader):
+                        exid = int(csv_reader[idx]["exid"])
+                        ids.append(exid)
+                        size += int(csv_reader[idx]["size"])
+                        idx += 1
+                    else:
+                        # EOF, not enough sentences left to group
+                        break
+
+                json_object = {"exid": ids, "size": size}
+                json.dump(json_object, out_file)
+                out_file.write("\n")
+
+def filter_large_entries(input_file, output_file, desired_token_length):
+    # Temporary file to store entries that don't meet the condition
+    temp_file = "temp.csv"
+
+    with open(input_file, "r", encoding="utf-8") as in_file, \
+         open(output_file, "w", encoding="utf-8") as out_file, \
+         open(temp_file, "w", encoding="utf-8") as temp:
+        
+        # Read input file
+        csv_reader = list(csv.DictReader(input_file))
+        idx = 0
+        while idx < len(csv_reader):
+            exid = int(csv_reader[idx]["exid"])
+            size = int(csv_reader[idx]["size"])
+
+            if size >= desired_token_length:
+                json_object = {"exid": exid, "size": size}
+                json.dump(json_object, out_file)
+                out_file.write("\n")
+            else:
+                temp.write(f"{exid},{size}\n")
+
+    # Replace the original file with the temporary file
+    os.remove(input_file)
+    os.rename(temp_file, input_file)
+
 def count_large_entries_json(json_file, max_tokens):
     # Open the JSON file for reading
     with open(json_file, "r", encoding="utf-8") as file:
@@ -364,6 +426,9 @@ def count_large_entries_json(json_file, max_tokens):
     return large_entry_count
 
 def reformat_dataset(json_file, dataset_file, output_file):
+    # Create output file
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    
     with open(json_file, "r", encoding="utf-8") as in_file, open(output_file, "w", encoding="utf-8") as outfile:       # Read the dataset file into a list of lines
         with open(dataset_file, 'r') as file:
             # this list will hold the dataset, starting at index 0
