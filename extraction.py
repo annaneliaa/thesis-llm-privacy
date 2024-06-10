@@ -57,6 +57,8 @@ with open(args.config_file, 'r') as f:
     SEED
 ) = load_constants_from_config(config)
 
+HGmodel = MODEL_NAME
+
 if args.model_dir:
     # Path to finetuned model is provided
     MODEL_NAME = args.model_dir
@@ -75,12 +77,15 @@ else:
 
 logger.info(f"Default device: {DEFAULT_DEVICE}")
 
+# Get cache dir from .env
+cache_dir = os.getenv("HF_CACHE_DIR")
+
 # Load model and tokenizer
 try:
     logger.info("Loading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=cache_dir)
     logger.info("Loading model...")
-    MODEL = AutoModelForCausalLM.from_pretrained(MODEL_NAME, low_cpu_mem_usage=True)
+    MODEL = AutoModelForCausalLM.from_pretrained(MODEL_NAME, low_cpu_mem_usage=True, cache_dir=cache_dir)
     # move model to GPU
     MODEL.to(DEFAULT_DEVICE)
     logger.info("Model loaded successfully.")
@@ -152,7 +157,7 @@ def main():
     os.makedirs(generations_base, exist_ok=True)
     losses_base = os.path.join(experiment_base, "losses")
     os.makedirs(losses_base, exist_ok=True)
-    prompts_base = os.path.join(SOURCE_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN))
+    prompts_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), HGmodel)
 
     logger.info("Loading prompts from numpy file")
     prompts = load_prompts(prompts_base, "train_prefix.npy")
