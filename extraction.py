@@ -142,9 +142,18 @@ def write_array(file_path: str, array: np.ndarray, unique_id):
     file_ = file_path.format(str(unique_id))
     np.save(file_, array)
     
-def load_prompts(dir_: str, file_name: str) -> np.ndarray:
+def load_prompts(dir_: str, file_name: str, preprefix_len: int, split: int) -> np.ndarray:
     """Loads prompts from the file pointed to `dir_` and `file_name`."""
-    return np.load(os.path.join(dir_, file_name)).astype(np.int64)
+    prompts = np.load(os.path.join(dir_, file_name)).astype(np.int64)
+    
+    if preprefix_len == 0:
+        return prompts 
+    
+    else:
+        preprefix_prompts = np.load(os.path.join(dir_, f"{split}_preprefix.npy")).astype(np.int64)
+        prompts = np.concatenate((preprefix_prompts, prompts), axis=1)
+
+        return prompts
 
 def main(): 
     logger.info("======= Starting extraction ======")
@@ -160,7 +169,7 @@ def main():
     prompts_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), HGmodel)
 
     logger.info("Loading prompts from numpy file")
-    prompts = load_prompts(prompts_base, "train_prefix.npy")
+    prompts = load_prompts(prompts_base, SPLIT + "_prefix.npy", EXAMPLE_TOKEN_LEN, SPLIT)
 
     all_generations, all_losses = [], []
 
@@ -201,7 +210,7 @@ def main():
     logger.info("Decoding model generations to JSONL...")
     # Path to exids of the dataset
     # Using the original example ids to attach to each model generation
-    exids = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", "common_exids-"+str(EXAMPLE_TOKEN_LEN)+".csv")
+    exids = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), "common_exids-"+str(EXAMPLE_TOKEN_LEN)+".csv")
     for i in range(0, NUM_TRIALS):
         file_path = os.path.join(experiment_base, f"generations/{i}.npy")
         data = np.load(file_path)

@@ -111,11 +111,11 @@ tokenizer.pad_token = tokenizer.eos_token
 print("Model max length:", tokenizer.model_max_length)
 
 # Load the dataset
-data_set_path = os.path.join(DATASET_DIR, DATASET_NAME + "." + LANGUAGE)
+data_set_path = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE)
 
 # Split the dataset into training and evaluation sets
 eval_percentage = VAL_SPLIT
-split_set_to_train_val(eval_percentage, DATASET_DIR, dataset_path=data_set_path, language=LANGUAGE)
+split_set_to_train_val(eval_percentage, os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN)), dataset_path=data_set_path, language=LANGUAGE)
 
 # Read and tokenize training dataset
 with open(TRAIN_FILE, "r") as f:
@@ -158,6 +158,8 @@ eval_dataset = SentencesDataset(
     tokenized_eval_sentences["input_ids"], tokenized_eval_sentences["attention_mask"]
 )
 
+HF_CACHE_DIR = os.getenv("HF_CACHE_DIR")
+
 # Set up trainer
 output_dir = os.path.join("finetuned", DATASET_DIR, EXPERIMENT_NAME)
 
@@ -165,7 +167,7 @@ default_args = {
     "output_dir": output_dir,
     "evaluation_strategy": "steps",
     "eval_steps": 1000,
-    "save_steps": 999999,
+    "save_steps": 10000,
     "save_total_limit": 3,
     "load_best_model_at_end": True,
     "metric_for_best_model": "eval_loss",

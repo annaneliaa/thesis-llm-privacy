@@ -2,7 +2,7 @@
     "root_dir": "tmp/",
     "dataset_dir": "EMEA",
     "source_dir": "./datasets",
-    "dataset_name": "EMEA",
+    "dataset_name": "EMEA-c",
     "experiment_name": "nl-150-100-125M",
     "num_trials": 100,
     "language": "nl",

@@ -289,8 +289,7 @@ def split_set_to_train_val(eval_percentage, output_dir, dataset_path, language):
 
             # iterate over all train_indices
             train_indices = json.load(indices_file)["train"]
-            print(f"Train indices: {train_indices}")  # Debug print
-
+ 
             for index in train_indices:
                 json_obj = json.loads(dataset_jsonl[index])
                 json.dump(json_obj, out_file, ensure_ascii=False)      

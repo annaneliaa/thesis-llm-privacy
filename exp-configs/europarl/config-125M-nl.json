@@ -8,7 +8,7 @@
     "split": "train",
     "suffix_len": 50,
     "prefix_len": 50,
-    "example_token_len": 150,
+    "example_token_len": 200,
     "preprefix_len": 50,
     "source_dir": "./datasets",
     "source_file": "train_dataset.npy",

@@ -50,7 +50,7 @@ except Exception as e:
 
 def main():
     # Input: Two parallel datasets where each line is a sentence, in english and dutch (or LANG1 and LANG2)
-    # This script will preprocess the data and save it in a format that can be used by the model
+    # This script will process the data and save it in a format that can be used by the model
     # The data will be tokenized to count the number of tokens in each sentence
     # Each sentence is assigned an example ID
     # We balance the English and Dutch datasets by only keeping sentences that are at least the desired token length in both languages
@@ -59,7 +59,7 @@ def main():
     logger.info("==== Sarting data processing script ====")
     logger.info("This may take a while depending on the size of the dataset...")
     # Load the datasets
-    dataset_base = os.path.join(config["dataset_dir"], config["dataset_name"])
+    dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME)
 
     # Count the number of tokens in each sentence for both datasets
     # Count the number of sentences that are at least the desired token length
@@ -103,11 +103,14 @@ def main():
         input_file = os.path.join(dataset_base + "." + lang)
         trunc_json_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".jsonl")
         
+        # Truncate sentences and put in JSONL format for string comparison after extraction
         trunc_json(os.path.join(input_file + ".jsonl"), trunc_json_file, EXAMPLE_TOKEN_LEN, exid_list, tokenizer)
         
         # JSONL version of the complete dataset is no longer needed
         os.remove(input_file + ".jsonl")
-
+        
+        #Make text version of jsonl version too, for model training
+        extract_text_from_json(trunc_json_file, os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang))
 
     logger.info("==== Data processing script completed ====")
 

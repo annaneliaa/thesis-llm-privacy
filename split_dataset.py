@@ -70,18 +70,7 @@ def main():
     )
 
     # SPLIT = TRAIN, so we are processing training dataset for step 2 now!!!
-    ds_files = [
-        open(
-            DATASET_DIR
-            + "/"
-            + DATASET_NAME
-            + "."
-            + LANGUAGE
-            + "-"
-            + SPLIT
-            + ".jsonl"
-        )
-    ]
+    ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + "-" + SPLIT + ".jsonl"))]
 
     logger.info("Opened file: %s", str(ds_files[0].name))
 
@@ -131,6 +120,17 @@ def main():
         )
         np.save(
             os.path.join(npy_arrays_base, SPLIT + "_suffix.npy"), prompts[:, 150:200]
+        )
+
+    if EXAMPLE_TOKEN_LEN == 150:
+        np.save(
+            os.path.join(npy_arrays_base, SPLIT + "_preprefix.npy"), prompts[:, :50]
+        )
+        np.save(
+            os.path.join(npy_arrays_base, SPLIT + "_prefix.npy"), prompts[:, 50:100]
+        )
+        np.save(
+            os.path.join(npy_arrays_base, SPLIT + "_suffix.npy"), prompts[:, 100:150]
         )
 
     elif EXAMPLE_TOKEN_LEN == 100:
