@@ -131,7 +131,7 @@ def sort_losses(losses):
 # The function sort_bleu_scores(scores) expects a list of dicts
 # each dictionary has a key called "score"
 # sorts this list of dicts based on the value of "score" in DESCENDING order
-def sort_bleu_scores(scores):
+def sort_scores(scores):
     return sorted(scores, key=lambda x: x["score"], reverse=True)
 
 def read_bleu_scores(file_path):

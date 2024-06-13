@@ -44,6 +44,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+
 # Load configuration files
 with open(args.config_file, "r") as f:
     config = json.load(f)
@@ -69,6 +70,13 @@ with open(args.config_file, "r") as f:
     VAL_SPLIT, 
     SEED
 ) = load_constants_from_config(config)
+
+HF_CACHE_DIR = "/scratch/s4079876"
+
+# Set up trainer
+output_dir = os.path.join(HF_CACHE_DIR, "finetuned", DATASET_DIR, EXPERIMENT_NAME)
+
+logger.info("Saving trained model to %s", output_dir)
 
 # Set default device
 if torch.cuda.is_available():
@@ -157,11 +165,6 @@ dataset = SentencesDataset(
 eval_dataset = SentencesDataset(
     tokenized_eval_sentences["input_ids"], tokenized_eval_sentences["attention_mask"]
 )
-
-HF_CACHE_DIR = os.getenv("HF_CACHE_DIR")
-
-# Set up trainer
-output_dir = os.path.join("finetuned", DATASET_DIR, EXPERIMENT_NAME)
 
 default_args = {
     "output_dir": output_dir,

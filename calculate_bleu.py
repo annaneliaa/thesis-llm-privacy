@@ -29,6 +29,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# Load configuration files
 with open(args.config_file, "r") as f:
     config = json.load(f)
 
@@ -85,7 +86,7 @@ def main():
     suffix_jsonl_file = np_dataset_base + f"/{SPLIT}_suffix.jsonl"
 
     # Path to exids of the dataset
-    exids = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", "common_exids-"+str(EXAMPLE_TOKEN_LEN)+".csv")
+    exids = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), "common_exids-"+str(EXAMPLE_TOKEN_LEN)+".csv")
 
     # Check if the prefix jsonl file doesn't exist or is empty
     if not os.path.exists(prefix_jsonl_file) or os.stat(prefix_jsonl_file).st_size == 0:

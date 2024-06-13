@@ -98,11 +98,11 @@ logger.info("Language: %s", LANGUAGE)
 logger.info("Model: %s", MODEL_NAME)
 
 
-def generate_for_prompts(prompts: np.ndarray, batch_size: int, suffix_len: int, prefix_len: int) -> Tuple[np.ndarray, np.ndarray]:
+def generate_for_prompts(prompts: np.ndarray, batch_size: int, suffix_len: int, prefix_len: int, preprefix_len: int) -> Tuple[np.ndarray, np.ndarray]:
     """Generates suffixes given `prompts` and scores using their likelihood."""
     generations = []
     losses = []
-    generation_len = suffix_len + prefix_len
+    generation_len = preprefix_len + prefix_len + suffix_len
     for i, off in enumerate(range(0, len(prompts), batch_size)):
         prompt_batch = prompts[off: off + batch_size]
         logger.info(f"Generating for batch ID {i:05} of size {len(prompt_batch):04}")
@@ -177,7 +177,7 @@ def main():
     if not all([os.listdir(generations_base), os.listdir(losses_base)]):
         for trial in range(NUM_TRIALS):
             os.makedirs(experiment_base, exist_ok=True)
-            generations, losses = generate_for_prompts(prompts, BATCH_SIZE, SUFFIX_LEN, PREFIX_LEN)
+            generations, losses = generate_for_prompts(prompts, BATCH_SIZE, SUFFIX_LEN, PREFIX_LEN, PREPREFIX_LEN)
 
             logger.info(f"Trial {trial}: Generated {len(generations)} generations.")
 
