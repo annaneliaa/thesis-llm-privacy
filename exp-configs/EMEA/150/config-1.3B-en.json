@@ -1,0 +1,21 @@
+{
+    "root_dir": "tmp/",
+    "dataset_dir": "EMEA",
+    "source_dir": "./datasets",
+    "dataset_name": "EMEA-c-150",
+    "experiment_name": "en-150-100-1.3B",
+    "num_trials": 100,
+    "language": "en",
+    "split": "train",
+    "suffix_len": 50,
+    "prefix_len": 50,
+    "example_token_len": 150,
+    "preprefix_len": 50,
+    "source_file": "train_dataset.npy",
+    "batch_size": 32,
+    "model": "EleutherAI/gpt-neo-1.3B",
+    "train_file": "EMEA/150/train-en.txt",
+    "validation_file": "EMEA/150/validation-en.txt",
+    "validation_split_percentage": 0.1,
+    "seed": 42
+}

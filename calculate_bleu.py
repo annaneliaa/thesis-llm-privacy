@@ -32,35 +32,30 @@ args = parser.parse_args()
 # Load configuration files
 with open(args.config_file, "r") as f:
     config = json.load(f)
+(
+    ROOT_DIR, 
+    DATASET_DIR, 
+    SOURCE_DIR, 
+    DATASET_NAME, 
+    EXPERIMENT_NAME, 
+    NUM_TRIALS, 
+    PREFIX_LEN, 
+    SUFFIX_LEN, 
+    PREPREFIX_LEN, 
+    LANGUAGE, 
+    SPLIT, 
+    EXAMPLE_TOKEN_LEN, 
+    SOURCE_FILE, 
+    BATCH_SIZE, 
+    MODEL_NAME, 
+    TRAIN_FILE, 
+    VAL_FILE, 
+    VAL_SPLIT, 
+    SEED
+    ) = load_constants_from_config(config)
 
-    # For saving results
-    ROOT_DIR = config["root_dir"]
-    # Name of the dataset
-    DATASET_DIR = config["dataset_dir"]
-    # Directory where the .npy files of the dataset are stored
-    SOURCE_DIR = config["source_dir"]
-    # Name of the experiment
-    EXPERIMENT_NAME = config["experiment_name"]
-    # Number of trials
-    NUM_TRIALS = config["num_trials"]
-    # Length of the prefix
-    PREFIX_LEN = config["prefix_len"]
-    # Length of the suffix
-    SUFFIX_LEN = config["suffix_len"]
-    # Preprefix length
-    PREPREFIX_LEN = config["preprefix_len"]
-    # Language of the scenario (EN/NL)
-    LANGUAGE = config["language"]
-    # Number of tokens in the complete sequences
-    EXAMPLE_TOKEN_LEN = config["example_token_len"]
-    # Batch size for feeding prompts to the model
-    BATCH_SIZE = config["batch_size"]
-    # Split of the dataset to use (train/val/test)
-    SPLIT = config["split"]
-    # Name of the model to use
-    model = config["model"]
-
-tokenizer = AutoTokenizer.from_pretrained(model)
+# We use the non finetuned model here to evaluate the scores to ensure consistency in the experi2mental setup
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 # Function to calculate the BLEU score between the reference and candidate text
 def calc_bleu_score(reference, candidate):
@@ -74,7 +69,7 @@ def main():
     )
 
     np_dataset_base = os.path.join(
-        SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), model
+        SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), MODEL_NAME
     )
 
     logger.info("===== Decoding original prefixes & suffixes =====")

@@ -78,7 +78,7 @@ else:
 logger.info(f"Default device: {DEFAULT_DEVICE}")
 
 # Get cache dir from .env
-cache_dir = os.getenv("HF_CACHE_DIR")
+cache_dir = "/scratch/s4079876"
 
 # Load model and tokenizer
 try:
@@ -102,6 +102,7 @@ def generate_for_prompts(prompts: np.ndarray, batch_size: int, suffix_len: int, 
     """Generates suffixes given `prompts` and scores using their likelihood."""
     generations = []
     losses = []
+    # Include preprefix length in generation length
     generation_len = preprefix_len + prefix_len + suffix_len
     for i, off in enumerate(range(0, len(prompts), batch_size)):
         prompt_batch = prompts[off: off + batch_size]
@@ -131,17 +132,15 @@ def generate_for_prompts(prompts: np.ndarray, batch_size: int, suffix_len: int, 
             losses.extend(likelihood.numpy())
     return np.atleast_2d(generations), np.atleast_2d(losses).reshape((len(generations), -1))
 
-# def write_array(file_path: str, array: np.ndarray, unique_id: Union[int, str]):
-#     """Writes a batch of `generations` and `losses` to a file."""
-#     file_ = file_path.format(unique_id)
-#     np.save(file_, array)
-
 def write_array(file_path: str, array: np.ndarray, unique_id):
     """Writes a batch of `generations` and `losses` to a file."""
     # Convert unique_id to string before formatting file path
     file_ = file_path.format(str(unique_id))
     np.save(file_, array)
     
+# Load prompts
+# If the experiment is done with context (preprefix), load the preprefix prompts
+# and concatenate them with the prompts
 def load_prompts(dir_: str, file_name: str, preprefix_len: int, split: int) -> np.ndarray:
     """Loads prompts from the file pointed to `dir_` and `file_name`."""
     prompts = np.load(os.path.join(dir_, file_name)).astype(np.int64)
@@ -206,21 +205,7 @@ def main():
             file_ = os.path.join(losses_base, losses_file)
             losses.append(np.load(file_))
         losses = np.stack(losses, axis=1)
-
-    logger.info("Decoding model generations to JSONL...")
-    # Path to exids of the dataset
-    # Using the original example ids to attach to each model generation
-    exids = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), "common_exids-"+str(EXAMPLE_TOKEN_LEN)+".csv")
-    for i in range(0, NUM_TRIALS):
-        file_path = os.path.join(experiment_base, f"generations/{i}.npy")
-        data = np.load(file_path)
-        logger.info("Data shape: %s", str(data.shape))
-
-        output_file_path = os.path.join(experiment_base, f"decoded/decoded_strings_trial_{i}.jsonl")
-        output_dir = os.path.dirname(output_file_path)
-        os.makedirs(output_dir, exist_ok=True)
-        generations_to_jsonl(output_file_path, data, tokenizer, exids)
-
+        
     logger.info("====== Done ======")
 
 if __name__ == "__main__":

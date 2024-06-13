@@ -71,6 +71,7 @@ with open(args.config_file, "r") as f:
     SEED
 ) = load_constants_from_config(config)
 
+# Change to .env later
 HF_CACHE_DIR = "/scratch/s4079876"
 
 # Set up trainer
@@ -87,10 +88,6 @@ else:
     DEFAULT_DEVICE = "cpu"
 
 logger.info(f"Default device: {DEFAULT_DEVICE}")
-
-# Set seed for reproducibility
-# As we random split the dataset
-set_seed(SEED)
 
 def print_gpu_utilization():
     nvmlInit()
@@ -118,13 +115,7 @@ tokenizer.pad_token = tokenizer.eos_token
 
 print("Model max length:", tokenizer.model_max_length)
 
-# Load the dataset
-data_set_path = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE)
-
-# Split the dataset into training and evaluation sets
-eval_percentage = VAL_SPLIT
-split_set_to_train_val(eval_percentage, os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN)), dataset_path=data_set_path, language=LANGUAGE)
-
+# Load the training and validation sets
 # Read and tokenize training dataset
 with open(TRAIN_FILE, "r") as f:
     train = f.readlines()
@@ -170,6 +161,7 @@ default_args = {
     "output_dir": output_dir,
     "evaluation_strategy": "steps",
     "eval_steps": 1000,
+    # save steps is a high number to avoid overflow of storage disk on Habrok, change if needed
     "save_steps": 10000,
     "save_total_limit": 3,
     "load_best_model_at_end": True,

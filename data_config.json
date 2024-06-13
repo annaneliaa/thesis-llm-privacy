@@ -1,8 +1,0 @@
-{
-    "dataset_dir": "ECB",
-    "dataset_name": "ECB-c",
-    "language": "en",
-    "example_token_len": 100,
-    "source_dir": "./datasets",
-    "byte_offset_file": "ECB-c.en.csv"
-}

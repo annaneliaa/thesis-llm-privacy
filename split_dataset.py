@@ -69,8 +69,10 @@ def main():
         EXAMPLE_TOKEN_LEN,
     )
 
-    # SPLIT = TRAIN, so we are processing training dataset for step 2 now!!!
-    ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + "-" + SPLIT + ".jsonl"))]
+    if SPLIT != "":
+        ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + "-" + SPLIT + ".jsonl"))]
+    else:
+        ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + ".jsonl"))]
 
     logger.info("Opened file: %s", str(ds_files[0].name))
 

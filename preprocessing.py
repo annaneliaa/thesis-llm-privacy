@@ -95,18 +95,25 @@ def main():
     # Make sure out_file exists
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
+    # First filtering out all sentences that are already long enough
+    logger.info("Filtering sentences that are >= %s tokens to %s...", str(EXAMPLE_TOKEN_LEN), out_file)
+    filter_large_entries(in_file, out_file, EXAMPLE_TOKEN_LEN)
+
+    # Concatenating step
     # Output file is in JSONL format
     # Create new sentence pairs and record their new sizes
-    process_train_data(in_file, out_file,EXAMPLE_TOKEN_LEN)
+    logger.info("Concatening remaining sentences to %s", out_file)
+    group_sentences(in_file, out_file, groups=6)
+
 
     # Count the number of (concatenated) samples >= EXAMPLE_TOKEN_LEN in the concatenated dataset for the "smallest" language
     new_sample_count = count_large_entries_json(out_file, EXAMPLE_TOKEN_LEN)
     logger.info("Concatenated sentences in %s to reach %s samples >= %s tokens", smallest_set, new_sample_count, str(EXAMPLE_TOKEN_LEN))
     
     # Create concatenated version for the datasets
-    # JSONL format, aligned on example IDs
+    # txt format, aligned on sentences
     # Save new formatted datasets in a sub directory indicating the EXAMPLE_TOKEN_LEN value
-    logger.info("Generating JSONL for both languages...")
+    logger.info("Generating concatenated .txt version of original dataset for both languages...")
     for lang in languages:
         reformat_dataset(out_file, 
                          os.path.join(dataset_base + "." + lang),
