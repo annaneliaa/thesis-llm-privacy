@@ -1,9 +1,7 @@
 import argparse
 import json
 from IPython.display import display
-from transformers import AutoTokenizer
 from experiment_lib import *
-import wandb
 import logging
 
 # Configure Python's logging in Jupyter notebook
@@ -62,11 +60,6 @@ if args.model_dir:
     TRAINED = True
 else:
     logger.info("Model directory not provided, using default model specified in config.")
-
-# Get cache dir from .env
-cache_dir = os.getenv("HF_CACHE_DIR")
-    
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=cache_dir)
 
 def main():
 
