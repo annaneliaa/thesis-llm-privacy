@@ -2,5 +2,5 @@
     "dataset_dir": "EMEA",
     "dataset_name": "EMEA-c",
     "source_dir": "./datasets",
-    "example_token_len": 200
+    "example_token_len": 250
 }

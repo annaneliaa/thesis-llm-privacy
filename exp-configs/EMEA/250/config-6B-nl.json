@@ -1,0 +1,21 @@
+{
+    "root_dir": "tmp/",
+    "dataset_dir": "EMEA",
+    "source_dir": "./datasets",
+    "dataset_name": "EMEA-c-250",
+    "experiment_name": "nl-250-100-6B",
+    "num_trials": 100,
+    "language": "nl",
+    "split": "train",
+    "suffix_len": 50,
+    "prefix_len": 50,
+    "example_token_len": 250,
+    "preprefix_len": 150,
+    "source_file": "train_dataset.npy",
+    "batch_size": 32,
+    "model": "EleutherAI/gpt-j-6b",
+    "train_file": "EMEA/250/train-nl.txt",
+    "validation_file": "EMEA/250/validation-nl.txt",
+    "validation_split_percentage": 0.1,
+    "seed": 42
+}

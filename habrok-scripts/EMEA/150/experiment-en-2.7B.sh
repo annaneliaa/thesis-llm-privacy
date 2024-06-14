@@ -15,8 +15,6 @@ source $HOME/venvs/torch/bin/activate
 
 python ./trainer.py --config_file exp-configs/EMEA/150/config-2.7B-en.json
 
-python ./split_dataset.py --config_file exp-configs/EMEA/150/config-2.7B-en.json
-
 python ./extraction.py --config_file exp-configs/EMEA/150/config-2.7B-en.json --model_dir /scratch/s4079876/finetuned/EMEA/en-150-100-2.7B
 
 deactivate

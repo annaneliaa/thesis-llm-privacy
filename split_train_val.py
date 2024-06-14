@@ -6,7 +6,7 @@ import json
 from experiment_lib import load_constants_from_config
 from torch.utils.data import random_split
 from transformers import set_seed
-
+import torch
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(
@@ -89,6 +89,7 @@ def main():
     indices = list(range(len(dataset)))
 
     # Split the indices along with the dataset
+    logger.info("Splitting indices...")
     train_indices, eval_indices = random_split(indices, [train_size, eval_size])
 
     # Convert Subset objects to lists

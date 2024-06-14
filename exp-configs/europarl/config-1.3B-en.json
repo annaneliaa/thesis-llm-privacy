@@ -5,7 +5,7 @@
     "dataset_file": "europarl-v7.nl-en",
     "num_trials": 100,
     "language": "en",
-    "split": "train",
+    "split": "",
     "suffix_len": 50,
     "prefix_len": 50,
     "example_token_len": 100,

@@ -1,4 +1,3 @@
-import numpy as np
 from pynvml import *
 from transformers import (
     AutoTokenizer,
@@ -14,9 +13,8 @@ import logging
 from IPython.display import display
 import os
 import argparse
-import wandb
 import json
-from experiment_lib import load_constants_from_config, split_set_to_train_val
+from experiment_lib import load_constants_from_config
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(
@@ -33,17 +31,14 @@ handler = JupyterHandler()
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
-# Tracking runs with wandb
-wandb_key = os.getenv("WANDB_API_KEY")
-wandb.login(key=wandb_key)
-
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument(
     "--config_file", type=str, required=True, help="Path to the configuration file"
 )
-args = parser.parse_args()
+parser.add_argument("--epochs", type=int, required=False, help="Number of epochs to train for")
 
+args = parser.parse_args()
 
 # Load configuration files
 with open(args.config_file, "r") as f:
@@ -167,6 +162,7 @@ default_args = {
     "load_best_model_at_end": True,
     "metric_for_best_model": "eval_loss",
     "greater_is_better": False,
+    # default is 1, unless specified on command line
     "num_train_epochs": 1,
     "log_level": "error",
     "report_to": "none",
@@ -177,6 +173,9 @@ default_args = {
     "optim": "adafactor",
 }
 
+if args.epochs:
+    default_args["num_train_epochs"] = args.epochs
+
 training_args = TrainingArguments(**default_args)
 trainer = Trainer(
     model=model,
@@ -186,11 +185,13 @@ trainer = Trainer(
     data_collator=data_collator,
 )
 
+logger.info("Training model for %d epochs", training_args.num_train_epochs)
 result = trainer.train()
 logger.info("Training finished.")
 
 print_summary(result)
 
+logger.info("Saving model to %s", output_dir)
 # Save model and tokenizer
 trainer.save_model(
     os.path.join(output_dir)

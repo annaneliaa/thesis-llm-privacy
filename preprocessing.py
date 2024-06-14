@@ -102,8 +102,9 @@ def main():
     # Concatenating step
     # Output file is in JSONL format
     # Create new sentence pairs and record their new sizes
+    # Groups default is 4
     logger.info("Concatening remaining sentences to %s", out_file)
-    group_sentences(in_file, out_file, groups=6)
+    group_sentences(in_file, out_file, groups=12)
 
 
     # Count the number of (concatenated) samples >= EXAMPLE_TOKEN_LEN in the concatenated dataset for the "smallest" language

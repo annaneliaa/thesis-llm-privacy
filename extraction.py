@@ -168,7 +168,7 @@ def main():
     prompts_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), HGmodel)
 
     logger.info("Loading prompts from numpy file")
-    prompts = load_prompts(prompts_base, SPLIT + "_prefix.npy", EXAMPLE_TOKEN_LEN, SPLIT)
+    prompts = load_prompts(prompts_base, SPLIT + "_prefix.npy", PREPREFIX_LEN, SPLIT)
 
     all_generations, all_losses = [], []
 
