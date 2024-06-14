@@ -245,5 +245,22 @@ def main():
             f.close()
     logger.info("Sorted losses saved to %s", sorted_loss_output_file)
 
+    logger.info("Calculating perplexities...")
+    # Calculate perplexity of each model generation from the losses
+    perplexity_output_file = os.path.join(losses_base, "decoded/perplexities.jsonl")
+    if os.path.exists(perplexity_output_file) and os.path.getsize(perplexity_output_file) > 0:
+        logger.info("Output file %s already exists and is not empty, skipping...", perplexity_output_file)
+    else:
+        with open(sorted_loss_output_file, 'r') as f, open(perplexity_output_file, 'w') as file:
+            lines = f.readlines()
+            for line in lines:
+                obj = json.loads(line)
+                perplexities = calculate_perplexity(obj["losses"])
+                # replace the losses with the sorted list
+                perplexity_obj = {"exid": obj["exid"], "perplexities": perplexities}
+                json.dump(perplexity_obj, file, ensure_ascii=False)
+                file.write("\n")
+            f.close()
+
 if __name__ == "__main__":
     main()

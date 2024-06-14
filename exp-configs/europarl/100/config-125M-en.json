@@ -1,0 +1,21 @@
+{
+    "root_dir": "tmp/",
+    "dataset_dir": "europarl",
+    "source_dir": "./datasets",
+    "dataset_name": "europarl-v7.nl-en-100",
+    "experiment_name": "en-100-100-125M",
+    "num_trials": 100,
+    "language": "en",
+    "split": "",
+    "suffix_len": 50,
+    "prefix_len": 50,
+    "example_token_len": 100,
+    "preprefix_len": 0,
+    "source_file": "_dataset.npy",
+    "batch_size": 32,
+    "model": "EleutherAI/gpt-neo-125M",
+    "train_file": "",
+    "validation_file": "",
+    "validation_split_percentage": 0,
+    "seed": 42
+}

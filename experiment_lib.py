@@ -228,3 +228,17 @@ def text_to_csv(dir, train_file, val_file):
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerow({'text': all_text})   
+
+def calculate_perplexity(losses: dict):
+    # Parse the JSON object
+    # The object is of the form { "losses": [{"trial": 0, "loss": 0.0}]}
+    # Initialize an empty list for perplexities
+    perplexities = []
+
+    for trial in losses:
+        # Calculate the perplexity as exp(loss)
+        perplexity = np.exp(trial['loss'])
+        # Create a new dictionary with the trial number and the calculated perplexity
+        perplexities.append({'trial': trial['trial'], 'perplexity': perplexity})
+    
+    return perplexities
