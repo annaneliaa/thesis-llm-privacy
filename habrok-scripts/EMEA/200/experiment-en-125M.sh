@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --job-name=experiment-full(200/EN/125M)
-#SBATCH --mem=32000
+#SBATCH --mem=8000
 #SBATCH --gpus-per-node=a100:1
 
 module purge
@@ -14,8 +14,6 @@ module load Boost/1.79.0-GCC-11.3.0
 source $HOME/venvs/torch/bin/activate
 
 python ./trainer.py --config_file exp-configs/EMEA/200/config-125M-en.json
-
-python ./split_dataset.py --config_file exp-configs/EMEA/200/config-125M-en.json
 
 python ./extraction.py --config_file exp-configs/EMEA/200/config-125M-en.json --model_dir /scratch/s4079876/finetuned/EMEA/en-200-100-125M
 

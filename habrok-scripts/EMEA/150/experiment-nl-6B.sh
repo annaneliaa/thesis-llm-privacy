@@ -2,7 +2,7 @@
 #SBATCH --time=26:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --job-name=experiment-full(150/EN/125M)
+#SBATCH --job-name=experiment-full(100/NL/6B)
 #SBATCH --mem=8000
 #SBATCH --gpus-per-node=a100:1
 
@@ -13,8 +13,8 @@ module load Boost/1.79.0-GCC-11.3.0
 
 source $HOME/venvs/torch/bin/activate
 
-python ./trainer.py --config_file exp-configs/EMEA/150/config-125M-en.json
+python ./trainer.py --config_file exp-configs/EMEA/100/config-6B-nl.json
 
-python ./extraction.py --config_file exp-configs/EMEA/150/config-125M-en.json --model_dir /scratch/s4079876/finetuned/EMEA/en-150-100-125M
+python ./extraction.py --config_file exp-configs/EMEA/100/config-6B-nl.json --model_dir /scratch/s4079876/finetuned/EMEA/nl-100-100-6B
 
 deactivate

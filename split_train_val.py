@@ -95,6 +95,8 @@ def main():
     # Convert Subset objects to lists
     train_indices = train_indices.indices
     eval_indices = eval_indices.indices
+
+    print("# of indices: ", len(train_indices)+ len(eval_indices))
     
     # Save indices to file in JSON format
     with open(indices_file, "w") as f:

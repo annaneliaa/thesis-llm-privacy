@@ -12,7 +12,7 @@
     "example_token_len": 250,
     "preprefix_len": 150,
     "source_file": "train_dataset.npy",
-    "batch_size": 32,
+    "batch_size": 64,
     "model": "EleutherAI/gpt-neo-2.7B",
     "train_file": "EMEA/250/train-en.txt",
     "validation_file": "EMEA/250/validation-en.txt",
