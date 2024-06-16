@@ -20,6 +20,7 @@ logger.setLevel(logging.INFO)
 parser = argparse.ArgumentParser(description="Process input from config file.")
 parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
 parser.add_argument("--model_dir", type=str, required=False, help="Path to the directory with the saved model")
+parser.add_argument("--meteor", type=str, required=False, help="Indicate if script should process METEOR scores")
 
 args = parser.parse_args()
 
@@ -92,7 +93,7 @@ def main():
 
     # Merge bleu scores over different trials of all examples
     # Create output file
-    scores_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "scores")
+    scores_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "bleu_scores")
     os.makedirs(os.path.dirname(scores_base), exist_ok=True)
     output_file = os.path.join(scores_base, "complete_bleu_scores.jsonl")
     
@@ -138,53 +139,54 @@ def main():
                 file.close()
     logger.info("Sorted BLEU scores saved to %s", sorted_output_file)
 
+    if args.meteor =="True":
     # Repeat procedure for meteor scores
     # Create output file
-    meteor_scores_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "meteor_scores")
-    os.makedirs(os.path.dirname(meteor_scores_base), exist_ok=True)
-    output_file = os.path.join(meteor_scores_base, "complete_meteor_scores.jsonl")
-    
-    if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
-        trial_file_pattern = "meteor_scores_trial_"
-        # the exids list is sorted
-        for i in range(len(exids)):
-            exid = exids[i]
-            logger.info("Processing example %s...", exid)
-            # get all scores for this example
-            scores = merge_scores_or_losses(meteor_scores_base, trial_file_pattern, NUM_TRIALS, int(exid), logger, is_loss=False)
+        meteor_scores_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "meteor_scores")
+        os.makedirs(os.path.dirname(meteor_scores_base), exist_ok=True)
+        output_file = os.path.join(meteor_scores_base, "complete_meteor_scores.jsonl")
+        
+        if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+            trial_file_pattern = "meteor_scores_trial_"
+            # the exids list is sorted
+            for i in range(len(exids)):
+                exid = exids[i]
+                logger.info("Processing example %s...", exid)
+                # get all scores for this example
+                scores = merge_scores_or_losses(meteor_scores_base, trial_file_pattern, NUM_TRIALS, int(exid), logger, is_loss=False)
 
-            json_object = {"exid": exid, "scores": scores}
+                json_object = {"exid": exid, "scores": scores}
 
-            # Write the JSON object to the output file as a single line
-            with open(output_file, 'a') as file:
-                json.dump(json_object, file, ensure_ascii=False)
-                file.write("\n")
-            logger.info("Merged METEOR scores for exid %s", exid)   
-
-        logger.info("All merged METEOR scores saved to %s", output_file)
-    else:
-        logger.info("METEOR scores for this experiment previously merged, skipping...")
-
-
-    # Sort the meteor scores of all examples
-    logger.info("Sorting METEOR scores...")
-    sorted_output_file = os.path.join(meteor_scores_base, "sorted_compl_meteor_scores.jsonl")
-
-    if os.path.exists(sorted_output_file) and os.path.getsize(sorted_output_file) > 0:
-        logger.info("Output file %s already exists and is not empty, skipping...", sorted_output_file)
-    else:
-        with open(output_file, 'r') as f, open(sorted_output_file, 'w') as file:
-                lines = f.readlines()
-                for line in lines:
-                    obj = json.loads(line)
-                    sorted_scores = sort_scores(obj["scores"])
-                    # replace the scores with the sorted list
-                    sorted_obj = {"exid": obj["exid"], "scores": sorted_scores}
-                    json.dump(sorted_obj, file, ensure_ascii=False)
+                # Write the JSON object to the output file as a single line
+                with open(output_file, 'a') as file:
+                    json.dump(json_object, file, ensure_ascii=False)
                     file.write("\n")
-                f.close()
-                file.close()
-    logger.info("Sorted METEOR scores saved to %s", sorted_output_file)
+                logger.info("Merged METEOR scores for exid %s", exid)   
+
+            logger.info("All merged METEOR scores saved to %s", output_file)
+        else:
+            logger.info("METEOR scores for this experiment previously merged, skipping...")
+
+
+        # Sort the meteor scores of all examples
+        logger.info("Sorting METEOR scores...")
+        sorted_output_file = os.path.join(meteor_scores_base, "sorted_compl_meteor_scores.jsonl")
+
+        if os.path.exists(sorted_output_file) and os.path.getsize(sorted_output_file) > 0:
+            logger.info("Output file %s already exists and is not empty, skipping...", sorted_output_file)
+        else:
+            with open(output_file, 'r') as f, open(sorted_output_file, 'w') as file:
+                    lines = f.readlines()
+                    for line in lines:
+                        obj = json.loads(line)
+                        sorted_scores = sort_scores(obj["scores"])
+                        # replace the scores with the sorted list
+                        sorted_obj = {"exid": obj["exid"], "scores": sorted_scores}
+                        json.dump(sorted_obj, file, ensure_ascii=False)
+                        file.write("\n")
+                    f.close()
+                    file.close()
+        logger.info("Sorted METEOR scores saved to %s", sorted_output_file)
 
 
     # Decoding losses

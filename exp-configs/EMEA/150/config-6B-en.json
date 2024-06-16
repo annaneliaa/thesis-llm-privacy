@@ -4,7 +4,7 @@
     "source_dir": "./datasets",
     "dataset_name": "EMEA-c-150",
     "experiment_name": "en-150-100-6B",
-    "num_trials": 100,
+    "num_trials": 50,
     "language": "en",
     "split": "train",
     "suffix_len": 50,
@@ -17,5 +17,6 @@
     "train_file": "EMEA/150/train-en.txt",
     "validation_file": "EMEA/150/validation-en.txt",
     "validation_split_percentage": 0.1,
-    "seed": 42
+    "seed": 42,
+    "num_trial": 50
 }

@@ -33,38 +33,33 @@ args = parser.parse_args()
 with open(args.config_file, "r") as f:
     config = json.load(f)
 
-    # For saving results
-    ROOT_DIR = config["root_dir"]
-    # Name of the dataset
-    DATASET_DIR = config["dataset_dir"]
-    # Directory where the .npy files of the dataset are stored
-    SOURCE_DIR = config["source_dir"]
-    # Name of the experiment
-    EXPERIMENT_NAME = config["experiment_name"]
-    # Number of trials
-    NUM_TRIALS = config["num_trials"]
-    # Length of the prefix
-    PREFIX_LEN = config["prefix_len"]
-    # Length of the suffix
-    SUFFIX_LEN = config["suffix_len"]
-    # Preprefix length
-    PREPREFIX_LEN = config["preprefix_len"]
-    # Language of the scenario (EN/NL)
-    LANGUAGE = config["language"]
-    # Number of tokens in the complete sequences
-    EXAMPLE_TOKEN_LEN = config["example_token_len"]
-    # Batch size for feeding prompts to the model
-    BATCH_SIZE = config["batch_size"]
-    # Split of the dataset to use (train/val/test)
-    SPLIT = config["split"]
-    # Name of the model to use
-    model = config["model"]
+(
+    ROOT_DIR, 
+    DATASET_DIR, 
+    SOURCE_DIR, 
+    DATASET_NAME, 
+    EXPERIMENT_NAME, 
+    NUM_TRIALS, 
+    PREFIX_LEN, 
+    SUFFIX_LEN, 
+    PREPREFIX_LEN, 
+    LANGUAGE, 
+    SPLIT, 
+    EXAMPLE_TOKEN_LEN, 
+    SOURCE_FILE, 
+    BATCH_SIZE, 
+    MODEL_NAME, 
+    TRAIN_FILE, 
+    VAL_FILE, 
+    VAL_SPLIT, 
+    SEED
+    ) = load_constants_from_config(config)
 
 def main():
     logger.info("====== Calculating number of correct guesses (accuracy) for %s in language %s ======" % (EXPERIMENT_NAME, LANGUAGE))
 
     experiment_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
-    bleu_scores_base = os.path.join(experiment_base, "scores")
+    bleu_scores_base = os.path.join(experiment_base, "bleu_scores")
 
     complete_score_file = os.path.join(bleu_scores_base, "sorted_compl_bleu_scores.jsonl")
     output_file = os.path.join(experiment_base, "accuracy.jsonl")
@@ -87,10 +82,12 @@ def main():
             trials_corr = []
             trials_exact = []
             for score in scores:
-                if score["score"] >= THRESHOLD:
-                    trials_corr.append(score)
-                    if score["score"] == EXACT_MATCH_THRESHOLD:
-                        trials_exact.append(score)
+                # convert string to a float to keep fractional part
+                s = float(score["score"])
+                if s >= THRESHOLD:
+                    trials_corr.append(s)
+                    if s == EXACT_MATCH_THRESHOLD:
+                        trials_exact.append(s)
                 else:
                     NUM_MISS += 1
 

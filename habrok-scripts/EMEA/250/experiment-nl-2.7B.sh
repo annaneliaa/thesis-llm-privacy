@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --time=26:00:00
+#SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --job-name=experiment-full(250/NL/2.7B)
@@ -14,8 +14,6 @@ module load Boost/1.79.0-GCC-11.3.0
 source $HOME/venvs/torch/bin/activate
 
 python ./trainer.py --config_file exp-configs/EMEA/250/config-2.7B-nl.json
-
-python ./split_dataset.py --config_file exp-configs/EMEA/250/config-2.7B-nl.json
 
 python ./extraction.py --config_file exp-configs/EMEA/250/config-2.7B-nl.json --model_dir /scratch/s4079876/finetuned/EMEA/nl-250-100-2.7B
 

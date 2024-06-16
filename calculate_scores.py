@@ -78,10 +78,10 @@ def main():
 
     logger.info("===== Decoding original preprefixes, prefixes & suffixes =====")
 
-    prefix_file = os.path.join(np_dataset_base, f"{SPLIT}_prefix.npy")
+    # prefix_file = os.path.join(np_dataset_base, f"{SPLIT}_prefix.npy")
     suffix_file = os.path.join(np_dataset_base, f"{SPLIT}_suffix.npy")
 
-    prefix_jsonl_file = np_dataset_base + f"/{SPLIT}_prefix.jsonl"
+    # prefix_jsonl_file = np_dataset_base + f"/{SPLIT}_prefix.jsonl"
     suffix_jsonl_file = np_dataset_base + f"/{SPLIT}_suffix.jsonl"
 
     if(SPLIT == "train"):
@@ -102,36 +102,14 @@ def main():
             print(f"File {path} does not exist or is empty, stopping execution.")
             return
 
-    # Check if the prefix jsonl file doesn't exist or is empty
-    if not os.path.exists(prefix_jsonl_file) or os.stat(prefix_jsonl_file).st_size == 0:
-        prefixes = np.load(prefix_file)
-        generations_to_jsonl(prefix_jsonl_file, prefixes, tokenizer, exids)
-
     # Check if the suffix jsonl file doesn't exist or is empty
     if not os.path.exists(suffix_jsonl_file) or os.stat(suffix_jsonl_file).st_size == 0:
         suffixes = np.load(suffix_file)
         generations_to_jsonl(suffix_jsonl_file, suffixes, tokenizer, exids)    
 
-    # Load the original prefix + suffix from the dataset
-    # Fill lists
-    with open(prefix_jsonl_file, "r", encoding="utf-8", newline="") as file:
-        prefix_lines = file.readlines()
-
     with open(suffix_jsonl_file, "r", encoding="utf-8", newline="") as file:
         suffix_lines = file.readlines()
 
-    # Repeat these steps for the preprefixes in the case that it was used in the experiment
-    if(PREPREFIX_LEN > 0):
-        preprefix_file = os.path.join(np_dataset_base, f"{SPLIT}_preprefix.npy")
-        preprefix_jsonl_file = np_dataset_base + f"/{SPLIT}_preprefix.jsonl"
-
-        # Check if the preprefix jsonl file doesn't exist or is empty
-        if not os.path.exists(preprefix_jsonl_file) or os.stat(preprefix_jsonl_file).st_size == 0:
-            preprefixes = np.load(preprefix_file)
-            generations_to_jsonl(preprefix_jsonl_file, preprefixes, tokenizer, exids)
-            
-        with open(preprefix_jsonl_file, "r", encoding="utf-8", newline="") as file:
-            preprefix_lines = file.readlines()
 
     # Create a directory to store the BLEU scores
     bleu_scores_base = os.path.join(
@@ -152,11 +130,10 @@ def main():
 
         # Check if the file with BLEU scores for this trial already exists
         bleu_scores_file = os.path.join(bleu_scores_base, f"bleu_scores_trial_{trial}.jsonl")
-        bleu_scores_suff_file = os.path.join(bleu_scores_base, f"bleu_scores_suff_trial_{trial}.jsonl")
 
         logger.info("Saving BLEU scores for trial %s to %s", trial, bleu_scores_file)
 
-        if os.path.exists(bleu_scores_file) and os.path.exists(bleu_scores_suff_file):
+        if os.path.exists(bleu_scores_file):
             logger.info(
                 "BLEU scores for trial %d previously calculated, skipping calculation",
                 trial,
@@ -172,8 +149,7 @@ def main():
             "decoded",
             f"decoded_strings_trial_{trial}.jsonl",
         )
-        full_sentence_scores_b = []
-        suffix_only_scores_b = []
+        bleu_scores = []
 
         with open(trial_file, "r", encoding="utf-8", newline="") as file:
             # Read the complete file
@@ -187,36 +163,25 @@ def main():
             candidate = json_obj["text"]
 
             # Compare the generated text with the original text using the BLEU score using example id
-            # Concatenate the prefix and suffix to form the reference text
-            prefix = json.loads(prefix_lines[index])["text"].strip()
             suffix = json.loads(suffix_lines[index])["text"].strip()
-            
-            if(PREPREFIX_LEN > 0):
-                preprefix = json.loads(preprefix_lines[index])["text"].strip()
-                reference = preprefix + prefix + suffix
-            else:
-                reference = prefix + suffix
 
             # Tokenize the candidate to get the last SUFFIX_LEN tokens for suffix comparison only
-            suffix_ref = suffix
-            suffix_cand = tokenizer.tokenize(candidate)[-SUFFIX_LEN:]
-            suffix_cand = tokenizer.decode(suffix_cand, skip_special_tokens=True).replace('Ġ', '')
+            suffix_ref = tokenizer.tokenize(suffix)
+            suffix_ref = [s.replace('Ġ', ' ') for s in suffix_ref]
 
-            full_score = calc_bleu_score(reference, candidate)
-            suffix_score = calc_bleu_score(suffix_ref, suffix_cand)
+            cand = tokenizer.tokenize(candidate)
+            # skip the first 50 tokens as that was the input prefix
+            cand = cand[SUFFIX_LEN:]
+            suffix_cand = [c.replace('Ġ', ' ') for c in cand]
+            
+            bleu_score = calc_bleu_score(suffix_ref, suffix_cand)
 
             # Save the BLEU score for each exid in the trial
-            full_sentence_scores_b.append({"exid": exid, "score": full_score})
-            suffix_only_scores_b.append({"exid": exid, "score": suffix_score})
+            bleu_scores.append({"exid": exid, "score": float(bleu_score)})
             index += 1
 
         with open(bleu_scores_file, "w", encoding="utf-8", newline="") as file:
-            for score_obj in full_sentence_scores_b:
-                json.dump(score_obj, file, ensure_ascii=False)
-                file.write("\n")
-
-        with open(bleu_scores_suff_file, "w", encoding="utf-8", newline="") as file:
-            for score_obj in suffix_only_scores_b:
+            for score_obj in bleu_scores:
                 json.dump(score_obj, file, ensure_ascii=False)
                 file.write("\n")
 
@@ -228,11 +193,10 @@ def main():
 
         # Check if the file with BLEU scores for this trial already exists
         meteor_scores_file = os.path.join(meteor_scores_base, f"meteor_scores_trial_{trial}.jsonl")
-        meteor_scores_suff_file = os.path.join(bleu_scores_base, f"meteor_scores_suff_trial_{trial}.jsonl")
 
         logger.info("Saving METEOR scores for trial %s to %s", trial, meteor_scores_file)
 
-        if os.path.exists(meteor_scores_file) and os.path.exists(meteor_scores_suff_file):
+        if os.path.exists(meteor_scores_file):
             logger.info(
                 "METEOR scores for trial %d previously calculated, skipping calculation",
                 trial,
@@ -248,8 +212,8 @@ def main():
             "decoded",
             f"decoded_strings_trial_{trial}.jsonl",
         )
-        full_sentence_scores_m = []
-        suffix_only_scores_m = []
+
+        meteor_scores = []
 
         with open(trial_file, "r", encoding="utf-8", newline="") as file:
             # Read the complete file
@@ -262,42 +226,25 @@ def main():
             exid = json_obj["exid"]
             candidate = json_obj["text"]
 
-            # Compare the generated text with the original text using the BLEU score using example id
-            # Concatenate the prefix and suffix to form the reference text
-            prefix = json.loads(prefix_lines[index])["text"].strip()
+            # Compare the generated text with the original text using the METEOR score using example id
             suffix = json.loads(suffix_lines[index])["text"].strip()
-
-            if(PREPREFIX_LEN > 0):
-                preprefix = json.loads(preprefix_lines[index])["text"].strip()
-                reference = preprefix + prefix + suffix
-            else:
-                reference = prefix + suffix
-
-            # Tokenize the reference and candidate text
-            reference = nltk.tokenize.word_tokenize(reference)
-            candidate = nltk.tokenize.word_tokenize(candidate)
+            suffix_ref = tokenizer.tokenize(suffix)
+            suffix_ref = [s.replace('Ġ', ' ') for s in suffix_ref]
 
             # Tokenize the candidate to get the last SUFFIX_LEN tokens for suffix comparison only
-            suffix_ref = suffix
-            suffix_cand = tokenizer.tokenize(candidate)[-SUFFIX_LEN:]
-            suffix_cand = tokenizer.decode(suffix_cand, skip_special_tokens=True).replace('Ġ', '')
+            cand = tokenizer.tokenize(candidate)
+            cand = cand[-SUFFIX_LEN:]
+            suffix_cand = [c.replace('Ġ', ' ') for c in cand]
 
             # Calculate the METEOR score
-            full_score = calc_meteor_score(reference, candidate)
-            suffix_score = calc_meteor_score(suffix_ref, suffix_cand)
+            meteor_score = calc_meteor_score(suffix_ref, suffix_cand)
 
             # Save the BLEU score for each exid in the trial
-            full_sentence_scores_m.append({"exid": exid, "score": full_score})
-            suffix_only_scores_m.append({"exid": exid, "score": suffix_score})
+            meteor_scores.append({"exid": exid, "score": float(meteor_score)})
             index += 1
 
-        with open(bleu_scores_file, "w", encoding="utf-8", newline="") as file:
-            for score_obj in full_sentence_scores_m:
-                json.dump(score_obj, file, ensure_ascii=False)
-                file.write("\n")
-
-        with open(bleu_scores_suff_file, "w", encoding="utf-8", newline="") as file:
-            for score_obj in suffix_only_scores_m:
+        with open(meteor_scores_file, "w", encoding="utf-8", newline="") as file:
+            for score_obj in meteor_scores:
                 json.dump(score_obj, file, ensure_ascii=False)
                 file.write("\n")
 
