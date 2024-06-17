@@ -6,22 +6,22 @@ import statistics
 import matplotlib.pyplot as plt
 
 def plot_max_BLEU(exp_name, model, dataset_dir, language, example_token_len, prefix_len, num_trials):
-    wandb_key = os.getenv('WANDB_API_KEY')
-    wandb.login(key=wandb_key)
+    # wandb_key = os.getenv('WANDB_API_KEY')
+    # wandb.login(key=wandb_key)
 
-    # Initialize wandb
-    wandb.init(
-        project="thesis-llm-privacy",
-        name="Plot max. BLEU Score - " + exp_name + " - " + model,
-        config={
-            "experiment_name": exp_name,
-            "dataset": dataset_dir,
-            "language": language,
-            "token_len": example_token_len,
-            "prefix_len": prefix_len,
-            "num_trials": num_trials,
-        },
-    )
+    # # Initialize wandb
+    # wandb.init(
+    #     project="thesis-llm-privacy",
+    #     name="Plot max. BLEU Score - " + exp_name + " - " + model,
+    #     config={
+    #         "experiment_name": exp_name,
+    #         "dataset": dataset_dir,
+    #         "language": language,
+    #         "token_len": example_token_len,
+    #         "prefix_len": prefix_len,
+    #         "num_trials": num_trials,
+    #     },
+    # )
 
     path = os.path.join("tmp", dataset_dir, language, exp_name, "bleu_scores/sorted_compl_bleu_scores.jsonl")
     print(path)
@@ -46,21 +46,22 @@ def plot_max_BLEU(exp_name, model, dataset_dir, language, example_token_len, pre
     fig, ax = plt.subplots(figsize=(10, 6))
     plt.scatter(exids, scores, color='b', label='Max Score', s=2)
     ax.axhline(y=0.75, color='r', linestyle='--', label='y = 0.75')
-
+    
     ax.set_xlabel('exid')
     ax.set_ylabel('Max Score')
+    ax.set_yscale('log')
     ax.set_title('Max BLEU-score per exid for ' + exp_name + ' - ' + dataset_dir)
     ax.legend()
     ax.grid(True)
 
     # Log the plot to wandb
-    wandb.log({"Max Scores Plot": wandb.Image(fig)})
+    # wandb.log({"Max Scores Plot": wandb.Image(fig)})
 
     # Show the plot
     plt.show()
 
     # Finish the wandb run
-    wandb.finish()
+    # wandb.finish()
 
 def avg_10_highest_score(exp_name, model, dataset_dir, language, example_token_len, prefix_len, num_trials, isMeteor):
     # Average of top 10 bleu scores for each exid
