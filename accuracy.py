@@ -84,10 +84,14 @@ def main():
             for score in scores:
                 # convert string to a float to keep fractional part
                 s = float(score["score"])
+                obj = {
+                    "trial": score["trial"],
+                    "score": s
+                }
                 if s >= THRESHOLD:
-                    trials_corr.append(s)
+                    trials_corr.append(obj)
                     if s == EXACT_MATCH_THRESHOLD:
-                        trials_exact.append(s)
+                        trials_exact.append(obj)
                 else:
                     NUM_MISS += 1
 

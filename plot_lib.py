@@ -23,7 +23,7 @@ def plot_max_BLEU(exp_name, model, dataset_dir, language, example_token_len, pre
         },
     )
 
-    path = os.path.join("tmp", dataset_dir, language, exp_name, "scores/sorted_compl_bleu_scores.jsonl")
+    path = os.path.join("tmp", dataset_dir, language, exp_name, "bleu_scores/sorted_compl_bleu_scores.jsonl")
     print(path)
     # Load JSON data
     data = []
@@ -85,7 +85,7 @@ def avg_10_highest_score(exp_name, model, dataset_dir, language, example_token_l
         },
     )
 
-    path = os.path.join("tmp", dataset_dir, language, exp_name, "scores/sorted_compl_" + score_type + "_scores.jsonl")
+    path = os.path.join("tmp", dataset_dir, language, exp_name, "bleu_scores/sorted_compl_" + score_type + "_scores.jsonl")
     # Load JSON data
     data = []
     with open(path, 'r') as file:
@@ -156,7 +156,7 @@ def avg_10_highest_conf(exp_name, model, dataset_dir, language, example_token_le
     # Create a dictionary from trials for easy lookup
     trials_dict = {exid: trial_nums for exid, trial_nums in trials}
 
-    score_path = os.path.join("tmp", dataset_dir, language, exp_name, "scores/sorted_compl_bleu_scores.jsonl")
+    score_path = os.path.join("tmp", dataset_dir, language, exp_name, "bleu_scores/sorted_compl_bleu_scores.jsonl")
     # Load JSON data
     scores = []
     with open(score_path, 'r') as file:
