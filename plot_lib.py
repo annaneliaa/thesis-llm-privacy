@@ -61,6 +61,11 @@ def plot_max_BLEU(exp_name, model, dataset_dir, language, example_token_len, pre
     plt.show()
 
     # Finish the wandb run
+# `wandb.finish()` is a function call that is used to finish the current W&B (Weights & Biases) run.
+# This function is typically called at the end of the experiment or task being tracked by W&B to
+# signal the completion of the run. It finalizes the logging and tracking of metrics, artifacts, and
+# visualizations associated with the run. It ensures that all the data collected during the run is
+# properly saved and logged before the run is considered complete.
     # wandb.finish()
 
 def avg_10_highest_score(exp_name, model, dataset_dir, language, example_token_len, prefix_len, num_trials, isMeteor):

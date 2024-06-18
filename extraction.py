@@ -28,6 +28,7 @@ logger.info("Parsing arguments...")
 parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
 parser.add_argument("--model_dir", type=str, required=False, help="Path to the directory with the saved model")
+parser.add_argument("--cache_dir", type=str, required=False, help="Path to the cache directory")
 
 args = parser.parse_args()
 
@@ -77,8 +78,11 @@ else:
 
 logger.info(f"Default device: {DEFAULT_DEVICE}")
 
-# Get cache dir from .env
-cache_dir = "/scratch/s4079876"
+if args.cache_dir:
+    cache_dir = args.cache_dir
+else:
+    # Get cache dir from .env
+    cache_dir = "/scratch/s4079876"
 
 # Load model and tokenizer
 try:
@@ -106,7 +110,7 @@ def generate_for_prompts(prompts: np.ndarray, batch_size: int, suffix_len: int, 
     generation_len = preprefix_len + prefix_len + suffix_len
     for i, off in enumerate(range(0, len(prompts), batch_size)):
         prompt_batch = prompts[off: off + batch_size]
-        logger.info(f"Generating for batch ID {i:05} of size {len(prompt_batch):04}")
+        # logger.info(f"Generating for batch ID {i:05} of size {len(prompt_batch):04}")
         prompt_batch = np.stack(prompt_batch, axis=0)
         input_ids = torch.tensor(prompt_batch, dtype=torch.int64).to(DEFAULT_DEVICE)
         with torch.no_grad():
@@ -138,7 +142,16 @@ def write_array(file_path: str, array: np.ndarray, unique_id):
     file_ = file_path.format(str(unique_id))
     np.save(file_, array)
     
-# Load prompts
+
+# def write_array(file_path: str, array: np.ndarray, unique_id):
+#     file_ = file_path.format(str(unique_id))
+#     np.savez_compressed(file_, array)
+    
+# # Reading the compressed files
+# def read_array(file_path: str):
+#     with np.load(file_path) as data:
+#         return data['arr_0']
+# # Load prompts
 # If the experiment is done with context (preprefix), load the preprefix prompts
 # and concatenate them with the prompts
 def load_prompts(dir_: str, file_name: str, preprefix_len: int, split: int) -> np.ndarray:
@@ -186,11 +199,11 @@ def main():
             write_array(generation_string, generations, trial)
             write_array(losses_string, losses, trial)
 
-            all_generations.append(generations)
-            all_losses.append(losses)
+        #     all_generations.append(generations)
+        #     all_losses.append(losses)
 
-        generations = np.stack(all_generations, axis=1)
-        losses = np.stack(all_losses, axis=1)
+        # generations = np.stack(all_generations, axis=1)
+        # losses = np.stack(all_losses, axis=1)
     else:
         # we do not overwrite old results
         logger.info("Experiment done before, loading previously generated data...")

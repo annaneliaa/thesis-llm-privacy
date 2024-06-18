@@ -33,7 +33,6 @@ dependencies:
         - matplotlib
         - torchmetrics
         - wandb
-        - happytransformer
         - plotly
         - py-cpuinfo
         - pydantic

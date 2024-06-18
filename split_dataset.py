@@ -113,6 +113,17 @@ def main():
     np.save(os.path.join(npy_arrays_base, SPLIT + "_dataset.npy"), prompts)
     # split the tokens into preprefix, prefix, and suffix
 
+    if EXAMPLE_TOKEN_LEN == 250:
+        np.save(
+            os.path.join(npy_arrays_base, SPLIT + "_preprefix.npy"), prompts[:, :150]
+        )
+        np.save(
+            os.path.join(npy_arrays_base, SPLIT + "_prefix.npy"), prompts[:, 150:200]
+        )
+        np.save(
+            os.path.join(npy_arrays_base, SPLIT + "_suffix.npy"), prompts[:, 200:250]
+        )
+
     if EXAMPLE_TOKEN_LEN == 200:
         np.save(
             os.path.join(npy_arrays_base, SPLIT + "_preprefix.npy"), prompts[:, :100]
