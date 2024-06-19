@@ -1,6 +1,6 @@
 {
-    "dataset_dir": "EMEA",
+    "dataset_dir": "europarl",
     "dataset_name": "europarl-v7.nl-en",
     "source_dir": "./datasets",
-    "example_token_len": 250
+    "example_token_len": 100
 }
