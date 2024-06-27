@@ -70,8 +70,10 @@ def main():
     )
 
     if SPLIT != "":
+        logger.info("Split: ", SPLIT)
         ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + "-" + SPLIT + ".jsonl"))]
     else:
+        logger.info("Split: ", SPLIT)
         ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + ".jsonl"))]
 
     logger.info("Opened file: %s", str(ds_files[0].name))
@@ -92,7 +94,7 @@ def main():
                 padding="max_length",
             )
             if len(tokens) > 0:
-                prompts[exid] = tokens
+                prompts[exid] = tokens #????
 
             line_count += 1
             if line_count % BATCH_SIZE == 0:

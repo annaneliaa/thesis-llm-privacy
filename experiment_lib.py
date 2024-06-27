@@ -24,6 +24,7 @@ def generate_exid_list(file_path):
 
 # Function to generate a jsonlines version of model output
 # input here is a numpy array of tokenized data (using token IDs)
+# and a list of exids from the original (training) dataset
 def generations_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exids):
     """Converts the tokenized data to a JSONL file at `path`."""
 

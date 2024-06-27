@@ -5,7 +5,6 @@ from transformers import (
     TrainingArguments,
     Trainer,
     DataCollatorForLanguageModeling,
-    set_seed,
 )
 from torch.utils.data import Dataset
 import torch

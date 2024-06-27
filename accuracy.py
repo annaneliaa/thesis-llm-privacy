@@ -58,6 +58,8 @@ with open(args.config_file, "r") as f:
 def main():
     logger.info("====== Calculating number of correct guesses (accuracy) for %s in language %s ======" % (EXPERIMENT_NAME, LANGUAGE))
 
+    NUM_TRIALS = 100
+    
     experiment_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
     bleu_scores_base = os.path.join(experiment_base, "bleu_scores")
 

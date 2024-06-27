@@ -142,15 +142,6 @@ def write_array(file_path: str, array: np.ndarray, unique_id):
     file_ = file_path.format(str(unique_id))
     np.save(file_, array)
     
-
-# def write_array(file_path: str, array: np.ndarray, unique_id):
-#     file_ = file_path.format(str(unique_id))
-#     np.savez_compressed(file_, array)
-    
-# # Reading the compressed files
-# def read_array(file_path: str):
-#     with np.load(file_path) as data:
-#         return data['arr_0']
 # # Load prompts
 # If the experiment is done with context (preprefix), load the preprefix prompts
 # and concatenate them with the prompts
@@ -183,7 +174,7 @@ def main():
     logger.info("Loading prompts from numpy file")
     prompts = load_prompts(prompts_base, SPLIT + "_prefix.npy", PREPREFIX_LEN, SPLIT)
 
-    all_generations, all_losses = [], []
+    # all_generations, all_losses = [], []
 
     # if experiment is not done before, generate new data
     if not all([os.listdir(generations_base), os.listdir(losses_base)]):

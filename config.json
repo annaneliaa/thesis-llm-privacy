@@ -1,6 +1,23 @@
 {
-    "dataset_dir": "europarl",
-    "dataset_name": "europarl-v7.nl-en",
-    "source_dir": "./datasets",
-    "example_token_len": 100
+    "dataset_dir": "test",
+    "dataset_name": "EMEA-c",
+    "source_dir": "./test",
+    "example_token_len": 100,
+    "root_dir": "test",
+    "experiment_name": "test1",
+    "model_name": "gpt2",
+    "num_trials": 1,
+    "language": "en",
+    "split": "train",
+    "suffix_len": 50,
+    "prefix_len": 50,
+    "preprefix_len": 0,
+    "source_file": "train_dataset.npy",
+    "batch_size": 64,
+    "model": "EleutherAI/gpt-neo-2.7B",
+    "train_file": "test/100/train-en.txt",
+    "validation_file": "test/100/validation-en.txt",
+    "validation_split_percentage": 0.1,
+    "seed": 42,
+    "num_trial": 50
 }

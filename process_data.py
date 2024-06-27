@@ -82,6 +82,7 @@ def main():
         filter_csv(output_file, output_csv, EXAMPLE_TOKEN_LEN)
 
         logger.info("Generating JSONL for %s...", lang)
+        # Assigning new exids starting at 1
         text_to_jsonlines(input_file, os.path.join(input_file + ".jsonl"))
 
     # Compute common example IDs

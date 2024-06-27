@@ -132,6 +132,7 @@ def main():
 
         # Generate JSONL version of the training set for extraction
         # open JSONL version of the whole dataset
+        # this code caused a major issue REWRITE INDEZ
         with open(os.path.join(dataset_path + ".jsonl") , "r") as f, open(indices_file, "r") as idx_file:
             # Read all lines into a list
             dataset_jsonl = f.readlines()

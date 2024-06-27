@@ -8,7 +8,7 @@ from nltk.translate.meteor_score import meteor_score
 import argparse
 from transformers import AutoTokenizer
 from experiment_lib import *
-import nltk
+from time import sleep
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -26,6 +26,9 @@ logger.setLevel(logging.INFO)
 parser = argparse.ArgumentParser(description="Process input from config file.")
 parser.add_argument(
     "--config_file", type=str, required=True, help="Path to the configuration file"
+)
+parser.add_argument(
+    "--do_meteor", type=bool, required=False, help="Include METEOR score calculation or not"
 )
 args = parser.parse_args()
 
@@ -54,6 +57,7 @@ with open(args.config_file, "r") as f:
     SEED
     ) = load_constants_from_config(config)
 
+NUM_TRIALS = 100
 # We use the GPT2 tokenizer here to ensure consistency in the experimental setup
 tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
@@ -78,20 +82,22 @@ def main():
 
     logger.info("===== Decoding original preprefixes, prefixes & suffixes =====")
 
-    # prefix_file = os.path.join(np_dataset_base, f"{SPLIT}_prefix.npy")
+    prefix_file = os.path.join(np_dataset_base, f"{SPLIT}_prefix.npy")
     suffix_file = os.path.join(np_dataset_base, f"{SPLIT}_suffix.npy")
 
-    # prefix_jsonl_file = np_dataset_base + f"/{SPLIT}_prefix.jsonl"
+    prefix_jsonl_file = np_dataset_base + f"/{SPLIT}_prefix.jsonl"
     suffix_jsonl_file = np_dataset_base + f"/{SPLIT}_suffix.jsonl"
 
     if(SPLIT == "train"):
         # We use a trained model, so we need to load the exids from the training dataset only
         path = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "split_indices.json")
         with open(path, "r") as f:
+            logger.info(f"Loading split indices from {path}")
             split_indices = json.load(f)
             # this gives a list of indices present in the training dataset
             exids = split_indices["train"]
     else:
+        logger.info(f"Loading exids from the common exids file")
         # The full dataset was used, so we simply use the common exids file generated in the data processing step
         # Path to exids of the dataset
         path = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), "common_exids-"+str(EXAMPLE_TOKEN_LEN)+".csv")
@@ -123,6 +129,8 @@ def main():
     if not os.path.exists(bleu_scores_base) or not os.path.exists(meteor_scores_base):
         os.makedirs(bleu_scores_base, exist_ok=True)
         os.makedirs(meteor_scores_base, exist_ok=True)
+
+    sleep(2)
 
     # Start calculation for BLEU score
     for trial in range(NUM_TRIALS):
@@ -171,7 +179,7 @@ def main():
 
             cand = tokenizer.tokenize(candidate)
             # skip the first 50 tokens as that was the input prefix
-            cand = cand[SUFFIX_LEN:]
+            cand = cand[-SUFFIX_LEN:]
             suffix_cand = [c.replace('Ġ', ' ') for c in cand]
             
             bleu_score = calc_bleu_score(suffix_ref, suffix_cand)
@@ -187,68 +195,69 @@ def main():
 
         logger.info("Finished BLEU-score calculation for trial %d", trial)
     
-    # Start calculation for METEOR score
-    for trial in range(NUM_TRIALS):
-        logger.info("Starting METEOR-score calculation for trial %d", trial)
+    # if args.do_meteor == True:
+    #     # Start calculation for METEOR score
+    #     for trial in range(NUM_TRIALS):
+    #         logger.info("Starting METEOR-score calculation for trial %d", trial)
 
-        # Check if the file with BLEU scores for this trial already exists
-        meteor_scores_file = os.path.join(meteor_scores_base, f"meteor_scores_trial_{trial}.jsonl")
+    #         # Check if the file with BLEU scores for this trial already exists
+    #         meteor_scores_file = os.path.join(meteor_scores_base, f"meteor_scores_trial_{trial}.jsonl")
 
-        logger.info("Saving METEOR scores for trial %s to %s", trial, meteor_scores_file)
+    #         logger.info("Saving METEOR scores for trial %s to %s", trial, meteor_scores_file)
 
-        if os.path.exists(meteor_scores_file):
-            logger.info(
-                "METEOR scores for trial %d previously calculated, skipping calculation",
-                trial,
-            )
-            continue
+    #         if os.path.exists(meteor_scores_file):
+    #             logger.info(
+    #                 "METEOR scores for trial %d previously calculated, skipping calculation",
+    #                 trial,
+    #             )
+    #             continue
 
-        # Load the decoded generations file of the trial
-        trial_file = os.path.join(
-            ROOT_DIR,
-            DATASET_DIR,
-            LANGUAGE,
-            EXPERIMENT_NAME,
-            "decoded",
-            f"decoded_strings_trial_{trial}.jsonl",
-        )
+    #         # Load the decoded generations file of the trial
+    #         trial_file = os.path.join(
+    #             ROOT_DIR,
+    #             DATASET_DIR,
+    #             LANGUAGE,
+    #             EXPERIMENT_NAME,
+    #             "decoded",
+    #             f"decoded_strings_trial_{trial}.jsonl",
+    #         )
 
-        meteor_scores = []
+    #         meteor_scores = []
 
-        with open(trial_file, "r", encoding="utf-8", newline="") as file:
-            # Read the complete file
-            lines = file.readlines()
+    #         with open(trial_file, "r", encoding="utf-8", newline="") as file:
+    #             # Read the complete file
+    #             lines = file.readlines()
 
-        # to iterate over prefix and suffix lists
-        index = 0
-        for line in lines:
-            json_obj = json.loads(line)
-            exid = json_obj["exid"]
-            candidate = json_obj["text"]
+    #         # to iterate over prefix and suffix lists
+    #         index = 0
+    #         for line in lines:
+    #             json_obj = json.loads(line)
+    #             exid = json_obj["exid"]
+    #             candidate = json_obj["text"]
 
-            # Compare the generated text with the original text using the METEOR score using example id
-            suffix = json.loads(suffix_lines[index])["text"].strip()
-            suffix_ref = tokenizer.tokenize(suffix)
-            suffix_ref = [s.replace('Ġ', ' ') for s in suffix_ref]
+    #             # Compare the generated text with the original text using the METEOR score using example id
+    #             suffix = json.loads(suffix_lines[index])["text"].strip()
+    #             suffix_ref = tokenizer.tokenize(suffix)
+    #             suffix_ref = [s.replace('Ġ', ' ') for s in suffix_ref]
 
-            # Tokenize the candidate to get the last SUFFIX_LEN tokens for suffix comparison only
-            cand = tokenizer.tokenize(candidate)
-            cand = cand[-SUFFIX_LEN:]
-            suffix_cand = [c.replace('Ġ', ' ') for c in cand]
+    #             # Tokenize the candidate to get the last SUFFIX_LEN tokens for suffix comparison only
+    #             cand = tokenizer.tokenize(candidate)
+    #             cand = cand[-SUFFIX_LEN:]
+    #             suffix_cand = [c.replace('Ġ', ' ') for c in cand]
 
-            # Calculate the METEOR score
-            meteor_score = calc_meteor_score(suffix_ref, suffix_cand)
+    #             # Calculate the METEOR score
+    #             meteor_score = calc_meteor_score(suffix_ref, suffix_cand)
 
-            # Save the BLEU score for each exid in the trial
-            meteor_scores.append({"exid": exid, "score": float(meteor_score)})
-            index += 1
+    #             # Save the BLEU score for each exid in the trial
+    #             meteor_scores.append({"exid": exid, "score": float(meteor_score)})
+    #             index += 1
 
-        with open(meteor_scores_file, "w", encoding="utf-8", newline="") as file:
-            for score_obj in meteor_scores:
-                json.dump(score_obj, file, ensure_ascii=False)
-                file.write("\n")
+    #         with open(meteor_scores_file, "w", encoding="utf-8", newline="") as file:
+    #             for score_obj in meteor_scores:
+    #                 json.dump(score_obj, file, ensure_ascii=False)
+    #                 file.write("\n")
 
-        logger.info("Finished METEOR-score calculation for trial %d", trial)
+    #         logger.info("Finished METEOR-score calculation for trial %d", trial)
 
     logger.info("===== Done ======")
 
