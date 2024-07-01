@@ -70,7 +70,7 @@ def main():
     )
 
     if SPLIT != "":
-        logger.info("Split: ", SPLIT)
+        logger.info(SPLIT)
         ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + "-" + SPLIT + ".jsonl"))]
     else:
         logger.info("Split: ", SPLIT)
@@ -95,6 +95,7 @@ def main():
             )
             if len(tokens) > 0:
                 prompts[exid] = tokens #????
+                # prompts[line_count] = tokens
 
             line_count += 1
             if line_count % BATCH_SIZE == 0:
@@ -109,6 +110,7 @@ def main():
     os.makedirs(npy_arrays_base, exist_ok=True)
 
     prompts = [x[1] for x in sorted(prompts.items())]
+    # prompts = [x[1] for x in prompts.items()]
     prompts = np.array(prompts, dtype=np.uint16)
 
     # save the token sequences to .npy files to be used in model generation
