@@ -111,7 +111,7 @@ def main():
     suffixes = np.load(suffix_file)
     generations_to_jsonl(suffix_jsonl_file, suffixes, tokenizer, exids)   
 
-    exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset_exids.json")
+    exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
     with open(exids_file, "r") as f:
         exids = json.load(f)
 
@@ -127,7 +127,7 @@ def main():
                     suffix_lines.append(json_obj)
     logger.info("Filtered suffixes to only include exids in the exids list")
         
-    prompt_train_dataset_suffixes = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset_suffixes.jsonl")
+    prompt_train_dataset_suffixes = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), f"prompt-train_dataset_suffixes-{LANGUAGE}.jsonl")
         # save for checking
     with open(prompt_train_dataset_suffixes, 'w') as f:
             for line in suffix_lines:

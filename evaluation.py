@@ -115,7 +115,7 @@ def main():
 
 
     # common exids fix
-    exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset_exids.json")
+    exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
     logger.info("Loading exids from %s", exids_file)
     with open(exids_file, "r") as f:
         exids = json.load(f)
@@ -130,8 +130,11 @@ def main():
     # Merge bleu scores over different trials of all examples
     # Create output file
     scores_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "bleu_scores")
+    logger.info("Pulling BLEU scores from %s", scores_base)
     os.makedirs(os.path.dirname(scores_base), exist_ok=True)
     output_file = os.path.join(scores_base, "complete_bleu_scores.jsonl")
+
+    sleep(2)
     
     if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
         trial_file_pattern = "bleu_scores_trial_"
