@@ -107,20 +107,20 @@ def main():
                 exids.append(line.strip())
         f.close()
     else: 
-        dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "split_indices.json")
-        # Read indices of training examples in the training dataset
-        with open(dataset_base, 'r') as f:
-            indices = json.load(f)
-            exids = [i for i in indices["train"]]
+        # dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "split_indices.json")
+        # # Read indices of training examples in the training dataset
+        # with open(dataset_base, 'r') as f:
+        #     indices = json.load(f)
+        #     exids = [i for i in indices["train"]]
+
+           # common exids fix
+        exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
+        logger.info("Loading exids from %s", exids_file)
+        with open(exids_file, "r") as f:
+            exids = json.load(f)
 
 
-    # common exids fix
-    exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
-    logger.info("Loading exids from %s", exids_file)
-    with open(exids_file, "r") as f:
-        exids = json.load(f)
-
-    # sort the  exids
+    # sort the exids for binary search (not required for europarl)
     exids = sorted(exids)
 
     logger.info("Loaded %s example IDs", len(exids))

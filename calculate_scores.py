@@ -4,7 +4,6 @@ import json
 import logging
 from IPython.display import display
 from nltk.translate.bleu_score import sentence_bleu
-from nltk.translate.meteor_score import meteor_score
 import argparse
 from transformers import AutoTokenizer
 from experiment_lib import *
@@ -62,9 +61,6 @@ tokenizer = AutoTokenizer.from_pretrained("gpt2")
 def calc_bleu_score(reference, candidate):
     return sentence_bleu([reference], candidate)
 
-# Function to calculate the METEOR score between the reference and candidate text
-def calc_meteor_score(reference, candidate):
-    return meteor_score([reference], candidate)
 
 def main():
     logger.info(
@@ -86,13 +82,17 @@ def main():
     suffix_jsonl_file = np_dataset_base + f"/{SPLIT}_suffix.jsonl"
 
     if(SPLIT == "train"):
-        # We use a trained model, so we need to load the exids from the training dataset only
-        path = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "split_indices.json")
-        with open(path, "r") as f:
-            logger.info(f"Loading split indices from {path}")
-            split_indices = json.load(f)
-            # this gives a list of indices present in the training dataset
-            exids = split_indices["train"]
+        # # We use a trained model, so we need to load the exids from the training dataset only
+        # path = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "split_indices.json")
+        # with open(path, "r") as f:
+        #     logger.info(f"Loading split indices from {path}")
+        #     split_indices = json.load(f)
+        #     # this gives a list of indices present in the training dataset
+        #     exids = split_indices["train"]
+
+        exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
+        with open(exids_file, "r") as f:
+            exids = json.load(f)
     else:
         logger.info(f"Loading exids from the common exids file")
         # The full dataset was used, so we simply use the common exids file generated in the data processing step
@@ -105,15 +105,15 @@ def main():
             print(f"File {path} does not exist or is empty, stopping execution.")
             return
 
+    exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
+    with open(exids_file, "r") as f:
+        exids = json.load(f)
+
     suffix_lines = []
     # Check if the suffix jsonl file doesn't exist or is empty
     # if not os.path.exists(suffix_jsonl_file) or os.stat(suffix_jsonl_file).st_size == 0:
     suffixes = np.load(suffix_file)
     generations_to_jsonl(suffix_jsonl_file, suffixes, tokenizer, exids)   
-
-    exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
-    with open(exids_file, "r") as f:
-        exids = json.load(f)
 
     # print(sorted(exids))
 
@@ -175,7 +175,8 @@ def main():
             LANGUAGE,
             EXPERIMENT_NAME,
             "decoded",
-            f"decoded_strings_trial_{trial}_filtered.jsonl",
+            f"decoded_strings_trial_{trial}.jsonl",
+            # f"decoded_strings_trial_{trial}_filtered.jsonl",
         )
         bleu_scores = []
 

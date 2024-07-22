@@ -1,10 +1,10 @@
 {
     "root_dir": "tmp/",
-    "dataset_dir": "EMEA",
-    "source_dir": "./datasets",
-    "dataset_name": "EMEA-c-100",
+    "dataset_dir": "EMEA/epoch",
+    "source_dir": "./datasets/epoch",
+    "dataset_name": "cropped",
     "experiment_name": "en-100-100-2.7B-E5",
-    "num_trials": 50,
+    "num_trials": 100,
     "language": "en",
     "split": "train",
     "suffix_len": 50,
@@ -12,10 +12,10 @@
     "example_token_len": 100,
     "preprefix_len": 0,
     "source_file": "train_dataset.npy",
-    "batch_size": 64,
+    "batch_size": 32,
     "model": "EleutherAI/gpt-neo-2.7B",
-    "train_file": "EMEA/100/train-en.txt",
-    "validation_file": "EMEA/100/validation-en.txt",
+    "train_file": "EMEA/epoch/100/train-en-cropped.txt",
+    "validation_file": "EMEA/epoch/100/cropped.en-eval.txt",
     "validation_split_percentage": 0.1,
     "seed": 42
 }

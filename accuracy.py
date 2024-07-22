@@ -66,6 +66,8 @@ def main():
     complete_score_file = os.path.join(bleu_scores_base, "sorted_compl_bleu_scores.jsonl")
     output_file = os.path.join(experiment_base, "accuracy.jsonl")
 
+    logger.info("Reading from %s" % complete_score_file)
+
     with(open(complete_score_file, "r")) as in_file, open(output_file, "w") as out_file:
         lines = in_file.readlines()
         NUM_GENERATIONS = len(lines) * NUM_TRIALS

@@ -109,8 +109,8 @@ def main():
     npy_arrays_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), MODEL_NAME)
     os.makedirs(npy_arrays_base, exist_ok=True)
 
-    prompts = [x[1] for x in sorted(prompts.items())]
-    # prompts = [x[1] for x in prompts.items()]
+    # prompts = [x[1] for x in sorted(prompts.items())]
+    prompts = [x[1] for x in prompts.items()]
     prompts = np.array(prompts, dtype=np.uint16)
 
     # save the token sequences to .npy files to be used in model generation

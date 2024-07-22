@@ -123,7 +123,7 @@ with open(VAL_FILE, "r") as f:
     val = f.readlines()
 
 tokenized_eval_sentences = tokenizer(val, padding=True, truncation=True, return_tensors="pt")
-print("Number of evaluation sentences:", len(tokenized_eval_sentences["input_ids"]))
+print("Number of validation sentences:", len(tokenized_eval_sentences["input_ids"]))
 
 # Training set up
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False, return_tensors="pt")
@@ -155,7 +155,7 @@ default_args = {
     "output_dir": output_dir,
     "evaluation_strategy": "steps",
     "eval_steps": 1000,
-    # save steps is a high number to avoid overflow of storage disk on Habrok, change if needed
+    # save steps is a high number to avoid overflow of storage disk on Habrok
     "save_steps": 10000,
     "save_total_limit": 3,
     "load_best_model_at_end": True,

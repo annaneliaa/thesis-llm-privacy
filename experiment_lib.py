@@ -28,14 +28,13 @@ def generate_exid_list(file_path):
 def generations_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exids):
     """Converts the tokenized data to a JSONL file at `path`."""
 
-    # exids = generate_exid_list(exids)
     with open(output_file_path, "w", encoding="utf-8", newline='') as file:
         index = 0
         
         for row in data:
             exid = exids[index]
             # Convert token IDs to strings
-            # replace token space character with empty strin
+            # replace token space character with empty string
             decoded_string = tokenizer.decode(row, skip_special_tokens=True).replace('Ġ', '')
             line = decoded_string.strip()
 
@@ -48,7 +47,7 @@ def generations_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exi
             file.write("\n")
             index += 1
 
-    print("Decoded strings saved to: %s", str(output_file_path))
+    print("Decoded strings saved to:", str(output_file_path))
 
 # Function to generate a jsonlines version of scores for each example, for each trial
 def losses_to_jsonl(output_file_path: str, data: np.ndarray, exids):

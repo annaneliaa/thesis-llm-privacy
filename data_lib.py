@@ -463,3 +463,23 @@ def extract_text_from_json(json_file, output_txt_file):
             data = json.loads(line)
             text = data["text"]
             outfile.write(text + "\n")
+
+
+# Function to generate a jsonlines version of dataset
+# input here is a text file
+def text_to_jsonlines_exids(input_file, output_file, exids):
+    with open(input_file, "r", encoding="utf-8") as f_input, \
+         open(output_file, "w", encoding="utf-8") as f_output:
+
+        for index, line in enumerate(f_input):
+            # Remove leading/trailing whitespaces and newline characters
+            line = line.strip()
+            
+            # Create a JSON object with a "text" field containing the line
+            # and the original example ID from the exids list
+            json_object = {"exid": exids[index],
+                           "text": line}
+            
+            # Write the JSON object to the output file as a single line
+            json.dump(json_object, f_output, ensure_ascii=False)
+            f_output.write('\n')

@@ -53,7 +53,7 @@ def main():
     # This script will process the data and save it in a format that can be used by the model
     # The data will be tokenized to count the number of tokens in each sentence
     # Each sentence is assigned an example ID
-    # We balance the English and Dutch datasets by only keeping sentences that are at least the desired token length in both languages
+    # We balance the English and Dutch datasets by only keeping sentences that are at least the desired token length in both languages, and also exist in both sets
     # Output: A JSONL version of both datasets, aligned such that the set of example IDs is the same for both languages
 
     logger.info("==== Sarting data processing script ====")
@@ -82,7 +82,7 @@ def main():
         filter_csv(output_file, output_csv, EXAMPLE_TOKEN_LEN)
 
         logger.info("Generating JSONL for %s...", lang)
-        # Assigning new exids starting at 1
+        # Assigning NEW exids starting at 1
         text_to_jsonlines(input_file, os.path.join(input_file + ".jsonl"))
 
     # Compute common example IDs
