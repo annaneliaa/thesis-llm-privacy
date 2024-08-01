@@ -66,6 +66,7 @@ with open(args.config_file, "r") as f:
 ) = load_constants_from_config(config)
 
 # Change to .env later
+# This is the dir on Habrok where I store all models actively in use
 HF_CACHE_DIR = "/scratch/s4079876"
 
 # Set up trainer
@@ -83,6 +84,7 @@ else:
 
 logger.info(f"Default device: {DEFAULT_DEVICE}")
 
+# Functions for insight in GPU usage
 def print_gpu_utilization():
     nvmlInit()
     handle = nvmlDeviceGetHandleByIndex(0)
@@ -151,11 +153,12 @@ eval_dataset = SentencesDataset(
     tokenized_eval_sentences["input_ids"], tokenized_eval_sentences["attention_mask"]
 )
 
+# Training args for model 
 default_args = {
     "output_dir": output_dir,
     "evaluation_strategy": "steps",
     "eval_steps": 1000,
-    # save steps is a high number to avoid overflow of storage disk on Habrok
+    # save steps is a high number to avoid overflow of storage disk on Habrok (we dont want to store all intermediate versions of the model)
     "save_steps": 10000,
     "save_total_limit": 3,
     "load_best_model_at_end": True,

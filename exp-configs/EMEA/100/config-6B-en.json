@@ -4,7 +4,7 @@
     "source_dir": "./datasets",
     "dataset_name": "EMEA-c-100",
     "experiment_name": "en-100-100-6B",
-    "num_trials": 50,
+    "num_trials": 100,
     "language": "en",
     "split": "train",
     "suffix_len": 50,

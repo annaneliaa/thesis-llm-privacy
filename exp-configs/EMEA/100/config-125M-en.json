@@ -1,8 +1,8 @@
 {
     "root_dir": "tmp/",
-    "dataset_dir": "EMEA/epoch",
-    "source_dir": "./datasets/epoch",
-    "dataset_name": "cropped",
+    "dataset_dir": "EMEA",
+    "source_dir": "./datasets",
+    "dataset_name": "EMEA-c-100",
     "experiment_name": "en-100-100-125M",
     "num_trials": 100,
     "language": "en",
@@ -14,8 +14,8 @@
     "source_file": "train_dataset.npy",
     "batch_size": 64,
     "model": "EleutherAI/gpt-neo-125M",
-    "train_file": "EMEA/epoch/100/train-en-cropped.txt",
-    "validation_file": "EMEA/epoch/100/cropped.en-eval.txt",
+    "train_file": "EMEA/100/train-en.txt",
+    "validation_file": "EMEA/100/validation-en.txt",
     "validation_split_percentage": 0.1,
     "seed": 42
 }

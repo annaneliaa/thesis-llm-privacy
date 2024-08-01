@@ -55,24 +55,31 @@ with open(args.config_file, "r") as f:
     SEED
     ) = load_constants_from_config(config)
 
+assert((NUM_TRIALS == 100))
+
 def main():
     logger.info("====== Calculating number of correct guesses (accuracy) for %s in language %s ======" % (EXPERIMENT_NAME, LANGUAGE))
 
-    NUM_TRIALS = 100
-    
     experiment_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
     bleu_scores_base = os.path.join(experiment_base, "bleu_scores")
 
     complete_score_file = os.path.join(bleu_scores_base, "sorted_compl_bleu_scores.jsonl")
     output_file = os.path.join(experiment_base, "accuracy.jsonl")
 
-    logger.info("Reading from %s" % complete_score_file)
+    logger.info(f"Saving to {output_file}")
+
+    logger.info(f"Reading scores from {complete_score_file}")
+
+    # for analysis
+    rm_exids = []
+    # with open("EMEA/epoch/emea-rm-exids-E50.json", "r") as f:
+    #     rm_exids = json.load(f)
+    #     logger.info("Loaded %d removed exids." % len(rm_exids))
 
     with(open(complete_score_file, "r")) as in_file, open(output_file, "w") as out_file:
         lines = in_file.readlines()
+
         NUM_GENERATIONS = len(lines) * NUM_TRIALS
-
-
         NUM_EXACT_MATCH = 0
         NUM_CORRECT = 0
         NUM_MISS = 0
@@ -81,8 +88,15 @@ def main():
         for line in lines:
             json_obj = json.loads(line)
             exid = json_obj["exid"]
+
+            # analysis if statement, comment out if not needed
+            if int(exid) in rm_exids:
+                logger.info("Skipping exid %s" % exid)
+                continue
+
             scores = json_obj["scores"]
 
+            # count the number of correct and exact guesses in the experiment
             trials_corr = []
             trials_exact = []
             for score in scores:
@@ -113,16 +127,16 @@ def main():
                 }
                 out_objects.append(out_obj)
             
-        logger.info("Finished counting amount of correct guesses.")
-    
+        logger.info("Finished counting amount of correct and exact guesses.")
 
-        logger.info("Saving output to %s" % output_file)
         # save output to a file
+        logger.info("Saving output to %s" % output_file)
         json.dump({"experiment": EXPERIMENT_NAME, "num_correct": NUM_CORRECT, "num_exact_match": NUM_EXACT_MATCH, "num_generations": NUM_GENERATIONS, "num_miss": NUM_MISS}, out_file)
         out_file.write("\n")
 
         # sort on number of correct guesses
         # such that samples that were guessed correctly the most appear at the top of the file
+        # makes it easier for quick inspection of each experiment results
         out_objects = sorted(out_objects, key=lambda x: x['num_correct'], reverse=True)
         for out_obj in out_objects:
             json.dump(out_obj, out_file)

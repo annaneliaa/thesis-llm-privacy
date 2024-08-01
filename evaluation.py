@@ -107,17 +107,17 @@ def main():
                 exids.append(line.strip())
         f.close()
     else: 
-        # dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "split_indices.json")
-        # # Read indices of training examples in the training dataset
-        # with open(dataset_base, 'r') as f:
-        #     indices = json.load(f)
-        #     exids = [i for i in indices["train"]]
+        dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "split_indices.json")
+        # Read indices of training examples in the training dataset
+        with open(dataset_base, 'r') as f:
+            indices = json.load(f)
+            exids = [i for i in indices["train"]]
 
-           # common exids fix
-        exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
-        logger.info("Loading exids from %s", exids_file)
-        with open(exids_file, "r") as f:
-            exids = json.load(f)
+        #    # common exids fix
+        # exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
+        # logger.info("Loading exids from %s", exids_file)
+        # with open(exids_file, "r") as f:
+        #     exids = json.load(f)
 
 
     # sort the exids for binary search (not required for europarl)
@@ -143,7 +143,7 @@ def main():
             exid = exids[i]
             logger.info("Processing example %s...", exid)
             # get all scores for this example
-            # this function uses binary searcg to find the scores for the exid
+            # this function uses binary search to find the scores for the exid
             scores = merge_scores_or_losses(scores_base, trial_file_pattern, NUM_TRIALS, int(exid), logger, is_loss=False)
 
             json_object = {"exid": exid, "scores": scores}
@@ -179,85 +179,85 @@ def main():
                 file.close()
     logger.info("Sorted BLEU scores saved to %s", sorted_output_file)
 
-    # # Decoding losses
-    # logger.info("Decoding losses...")
+    # Decoding losses
+    logger.info("Decoding losses...")
 
-    # losses_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "losses")
+    losses_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "losses")
 
-    # for i in range(NUM_TRIALS):
-    #     decoded_losses_file = os.path.join(losses_base, f"decoded/decoded_losses_trial_{i}.jsonl")
+    for i in range(NUM_TRIALS):
+        decoded_losses_file = os.path.join(losses_base, f"decoded/decoded_losses_trial_{i}.jsonl")
         
-    #     # If the file already exists, skip this iteration
-    #     if os.path.exists(decoded_losses_file):
-    #         logger.info("Decoded losses for trial %s already computed, skipping...", i)
-    #         continue
+        # If the file already exists, skip this iteration
+        if os.path.exists(decoded_losses_file):
+            logger.info("Decoded losses for trial %s already computed, skipping...", i)
+            continue
 
-    #     np_losses_file = os.path.join(losses_base, f"{i}.npy")
-    #     data = np.load(np_losses_file)        
-    #     output_dir = os.path.dirname(decoded_losses_file)
-    #     os.makedirs(output_dir, exist_ok=True)
-    #     losses_to_jsonl(decoded_losses_file, data, exids)
+        np_losses_file = os.path.join(losses_base, f"{i}.npy")
+        data = np.load(np_losses_file)        
+        output_dir = os.path.dirname(decoded_losses_file)
+        os.makedirs(output_dir, exist_ok=True)
+        losses_to_jsonl(decoded_losses_file, data, exids)
 
-    #     logger.info("Decoded losses saved to %s", decoded_losses_file)
+        logger.info("Decoded losses saved to %s", decoded_losses_file)
 
-    # dec_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "losses/decoded")
-    # sort_jsonl_files(dec_base)
+    dec_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME, "losses/decoded")
+    sort_jsonl_files(dec_base)
 
-    # # merge losses
-    # loss_output_file = os.path.join(losses_base, "decoded/complete_losses.jsonl")
-    # os.makedirs(os.path.dirname(loss_output_file), exist_ok=True)
-    # trial_file_pattern = "decoded/decoded_losses_trial_"
+    # merge losses
+    loss_output_file = os.path.join(losses_base, "decoded/complete_losses.jsonl")
+    os.makedirs(os.path.dirname(loss_output_file), exist_ok=True)
+    trial_file_pattern = "decoded/decoded_losses_trial_"
 
-    # # If the file already exists and is not empty, skip the rest of the code
-    # if os.path.exists(loss_output_file) and os.path.getsize(loss_output_file) > 0:
-    #     logger.info("Output file %s already exists and is not empty, skipping...", loss_output_file)
-    # else:
-    #     for exid in exids:
-    #         logger.info("Processing example %s...", exid)
-    #         # get all losses for this example over all trials
-    #         losses = merge_scores_or_losses(losses_base, trial_file_pattern, NUM_TRIALS, int(exid), logger, is_loss=True)
+    # If the file already exists and is not empty, skip the rest of the code
+    if os.path.exists(loss_output_file) and os.path.getsize(loss_output_file) > 0:
+        logger.info("Output file %s already exists and is not empty, skipping...", loss_output_file)
+    else:
+        for exid in exids:
+            logger.info("Processing example %s...", exid)
+            # get all losses for this example over all trials
+            losses = merge_scores_or_losses(losses_base, trial_file_pattern, NUM_TRIALS, int(exid), logger, is_loss=True)
 
-    #         json_object = {"exid": exid, "losses": losses}
+            json_object = {"exid": exid, "losses": losses}
 
-    #         # Write the JSON object to the output file as a single line
-    #         with open(loss_output_file, 'a') as file:
-    #             json.dump(json_object, file, ensure_ascii=False)
-    #             file.write("\n")
-    #         logger.info("Merged losses for exid %s", exid)
+            # Write the JSON object to the output file as a single line
+            with open(loss_output_file, 'a') as file:
+                json.dump(json_object, file, ensure_ascii=False)
+                file.write("\n")
+            logger.info("Merged losses for exid %s", exid)
         
-    #     logger.info("All merged losses saved to %s", loss_output_file)
+        logger.info("All merged losses saved to %s", loss_output_file)
 
-    # # Sort the losses of all examples
-    # logger.info("Sorting losses...")
-    # sorted_loss_output_file = os.path.join(losses_base, "decoded/sorted_compl_losses.jsonl")
-    # with open(loss_output_file, 'r') as f, open(sorted_loss_output_file, 'w') as file:
-    #         lines = f.readlines()
-    #         for line in lines:
-    #             obj = json.loads(line)
-    #             sorted_losses = sort_losses(obj["losses"])
-    #             # replace the losses with the sorted list
-    #             sorted_obj = {"exid": obj["exid"], "losses": sorted_losses}
-    #             json.dump(sorted_obj, file, ensure_ascii=False)
-    #             file.write("\n")
-    #         f.close()
-    # logger.info("Sorted losses saved to %s", sorted_loss_output_file)
+    # Sort the losses of all examples
+    logger.info("Sorting losses...")
+    sorted_loss_output_file = os.path.join(losses_base, "decoded/sorted_compl_losses.jsonl")
+    with open(loss_output_file, 'r') as f, open(sorted_loss_output_file, 'w') as file:
+            lines = f.readlines()
+            for line in lines:
+                obj = json.loads(line)
+                sorted_losses = sort_losses(obj["losses"])
+                # replace the losses with the sorted list
+                sorted_obj = {"exid": obj["exid"], "losses": sorted_losses}
+                json.dump(sorted_obj, file, ensure_ascii=False)
+                file.write("\n")
+            f.close()
+    logger.info("Sorted losses saved to %s", sorted_loss_output_file)
 
-    # logger.info("Calculating perplexities...")
-    # # Calculate perplexity of each model generation from the losses
-    # perplexity_output_file = os.path.join(losses_base, "decoded/perplexities.jsonl")
-    # if os.path.exists(perplexity_output_file) and os.path.getsize(perplexity_output_file) > 0:
-    #     logger.info("Output file %s already exists and is not empty, skipping...", perplexity_output_file)
-    # else:
-    #     with open(sorted_loss_output_file, 'r') as f, open(perplexity_output_file, 'w') as file:
-    #         lines = f.readlines()
-    #         for line in lines:
-    #             obj = json.loads(line)
-    #             perplexities = calculate_perplexity(obj["losses"])
-    #             # replace the losses with the sorted list
-    #             perplexity_obj = {"exid": obj["exid"], "perplexities": perplexities}
-    #             json.dump(perplexity_obj, file, ensure_ascii=False)
-    #             file.write("\n")
-    #         f.close()
+    logger.info("Calculating perplexities...")
+    # Calculate perplexity of each model generation from the losses
+    perplexity_output_file = os.path.join(losses_base, "decoded/perplexities.jsonl")
+    if os.path.exists(perplexity_output_file) and os.path.getsize(perplexity_output_file) > 0:
+        logger.info("Output file %s already exists and is not empty, skipping...", perplexity_output_file)
+    else:
+        with open(sorted_loss_output_file, 'r') as f, open(perplexity_output_file, 'w') as file:
+            lines = f.readlines()
+            for line in lines:
+                obj = json.loads(line)
+                perplexities = calculate_perplexity(obj["losses"])
+                # replace the losses with the sorted list
+                perplexity_obj = {"exid": obj["exid"], "perplexities": perplexities}
+                json.dump(perplexity_obj, file, ensure_ascii=False)
+                file.write("\n")
+            f.close()
 
 if __name__ == "__main__":
     main()
