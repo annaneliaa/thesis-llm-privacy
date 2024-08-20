@@ -64,7 +64,7 @@ def main():
     bleu_scores_base = os.path.join(experiment_base, "bleu_scores")
 
     complete_score_file = os.path.join(bleu_scores_base, "sorted_compl_bleu_scores.jsonl")
-    output_file = os.path.join(experiment_base, "accuracy.jsonl")
+    output_file = os.path.join(experiment_base, "accuracy3.jsonl")
 
     logger.info(f"Saving to {output_file}")
 
@@ -72,9 +72,9 @@ def main():
 
     # for analysis
     rm_exids = []
-    # with open("EMEA/epoch/emea-rm-exids-E50.json", "r") as f:
-    #     rm_exids = json.load(f)
-    #     logger.info("Loaded %d removed exids." % len(rm_exids))
+    with open("europarl/europarl-rm-exids.json", "r") as f:
+        rm_exids = json.load(f)
+        logger.info("Loaded %d removed exids." % len(rm_exids))
 
     with(open(complete_score_file, "r")) as in_file, open(output_file, "w") as out_file:
         lines = in_file.readlines()
