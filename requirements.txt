@@ -1,0 +1,7 @@
+ipython
+nltk
+numpy
+torch
+transformers
+matplotlib
+pynvml
