@@ -37,6 +37,8 @@ DATASET_NAME = config["dataset_name"]
 SOURCE_DIR = config["source_dir"]
 # Number of tokens in the complete sequences
 EXAMPLE_TOKEN_LEN = config["example_token_len"]
+# Suffix added to the name of the output file. If preprocessing is not run, this can be "" in the config file
+PREPROCESSING_SUFFIX = config["preprocessing_suffix"]
 
 # For dataprocessing we use the GPT-2 tokenizer
 MODEL_NAME = "gpt2"
@@ -63,9 +65,9 @@ def main():
 
     # Load the datasets
     # e.g. dataset_base = "europarl/europarl-v7.nl-en"
-    dataset_base = os.path.join(config["dataset_dir"], config["dataset_name"])
+    dataset_base = os.path.join(DATASET_DIR, DATASET_NAME)
     # e.g. dataset_subdir = "europarl/100/europarl-v7.nl-en"
-    dataset_subdir = os.path.join(config["dataset_dir"], str(EXAMPLE_TOKEN_LEN), config["dataset_name"])
+    dataset_subdir = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME)
     # Count the number of tokens in each sentence for both datasets
     # e.g. csv_output_file_pattern = "datasets/europarl/csv/100"
     csv_output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN))
@@ -118,7 +120,7 @@ def main():
     for lang in languages:
         reformat_dataset(out_file, 
                          os.path.join(dataset_base + "." + lang),
-                         os.path.join(dataset_subdir + "-c." + lang)
+                         os.path.join(dataset_subdir + PREPROCESSING_SUFFIX + "." + lang)
         )
 
     logger.info("==== Data preprocessing complete ====")

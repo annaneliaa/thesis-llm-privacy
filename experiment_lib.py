@@ -184,6 +184,8 @@ def load_constants_from_config(config):
     DATASET_NAME = config["dataset_name"]
     # Name of the experiment
     EXPERIMENT_NAME = config["experiment_name"]
+    # Suffix appended to the name of the output file after preprocessing
+    PREPROCESSING_SUFFIX = config["preprocessing_suffix"]
     # Number of trials
     NUM_TRIALS = config["num_trials"]
     # Language of the scenario (EN/NL)
@@ -209,7 +211,7 @@ def load_constants_from_config(config):
     VAL_SPLIT = config["validation_split_percentage"]
     SEED = config["seed"]
 
-    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, VAL_SPLIT, SEED)
+    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, PREPROCESSING_SUFFIX, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, VAL_SPLIT, SEED)
 
 
 def text_to_csv(dir, train_file, val_file):

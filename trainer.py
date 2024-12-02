@@ -48,7 +48,8 @@ with open(args.config_file, "r") as f:
     DATASET_DIR, 
     SOURCE_DIR, 
     DATASET_NAME, 
-    EXPERIMENT_NAME, 
+    EXPERIMENT_NAME,
+    PREPROCESSING_SUFFIX,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -67,7 +68,7 @@ with open(args.config_file, "r") as f:
 
 # Change to .env later
 # This is the dir on Habrok where I store all models actively in use
-HF_CACHE_DIR = "/scratch/s4079876"
+HF_CACHE_DIR = "/scratch/s5202841"
 
 # Set up trainer
 output_dir = os.path.join(HF_CACHE_DIR, "finetuned", DATASET_DIR, EXPERIMENT_NAME)

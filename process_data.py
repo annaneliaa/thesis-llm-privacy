@@ -35,6 +35,8 @@ DATASET_NAME = config["dataset_name"]
 SOURCE_DIR = config["source_dir"]
 # Number of tokens in the complete sequences
 EXAMPLE_TOKEN_LEN = config["example_token_len"]
+# Suffix added to the name of the output file. If preprocessing is not run, this can be "" in the config file
+PREPROCESSING_SUFFIX = config["preprocessing_suffix"]
 
 # For dataprocessing we use the GPT-2 tokenizer
 MODEL_NAME = "gpt2"
@@ -67,7 +69,7 @@ def main():
     # Generate JSONL version of the datasets for inspection
     csv_output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN))
     for lang in languages:
-        input_file = os.path.join(dataset_base + "." + lang)
+        input_file = os.path.join(dataset_base + PREPROCESSING_SUFFIX + "." + lang)
         output_file= os.path.join(csv_output_file_pattern, DATASET_NAME + "." + lang + ".csv")
         
         logger.info("Counting tokens for %s...", lang)
@@ -83,7 +85,7 @@ def main():
 
         logger.info("Generating JSONL for %s...", lang)
         # Assigning NEW exids starting at 1
-        text_to_jsonlines(input_file, os.path.join(input_file + ".jsonl"))
+        text_to_jsonlines(input_file, os.path.join(dataset_base + "." + lang + ".jsonl"))
 
     # Compute common example IDs
     csv_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + ".")
@@ -101,17 +103,17 @@ def main():
     logger.info("%s common example IDs found", len(exid_list))
 
     for lang in languages:
-        input_file = os.path.join(dataset_base + "." + lang)
-        trunc_json_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".jsonl")
+        input_json_file = os.path.join(dataset_base + "." + lang + ".jsonl")
+        trunc_json_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-temp." + lang + ".jsonl")
         
         # Truncate sentences and put in JSONL format for string comparison after extraction
-        trunc_json(os.path.join(input_file + ".jsonl"), trunc_json_file, EXAMPLE_TOKEN_LEN, exid_list, tokenizer)
+        trunc_json(input_json_file, trunc_json_file, EXAMPLE_TOKEN_LEN, exid_list, tokenizer)
         
-        # JSONL version of the complete dataset is no longer needed
-        os.remove(input_file + ".jsonl")
+        # JSONL version of the complete dataset is no longer needed, so overwrite it
+        os.rename(trunc_json_file, input_json_file)
         
         #Make text version of jsonl version too, for model training
-        extract_text_from_json(trunc_json_file, os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang))
+        extract_text_from_json(input_json_file, os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + lang))
 
     logger.info("==== Data processing script completed ====")
 

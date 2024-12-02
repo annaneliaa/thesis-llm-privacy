@@ -39,7 +39,8 @@ with open(args.config_file, "r") as f:
     DATASET_DIR, 
     SOURCE_DIR, 
     DATASET_NAME, 
-    EXPERIMENT_NAME, 
+    EXPERIMENT_NAME,
+    PREPROCESSING_SUFFIX,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -132,7 +133,6 @@ def main():
 
         # Generate JSONL version of the training set for extraction
         # open JSONL version of the whole dataset
-        # this code caused a major issue REWRITE INDEZ
         with open(os.path.join(dataset_path + ".jsonl") , "r") as f, open(indices_file, "r") as idx_file:
             # Read all lines into a list
             dataset_jsonl = f.readlines()
