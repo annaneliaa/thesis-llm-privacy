@@ -3,6 +3,7 @@ import logging
 from IPython.display import display
 from transformers import AutoTokenizer
 from data_lib import *
+from experiment_lib import load_constants_from_config
 
 INF = float("inf")
 
@@ -26,19 +27,33 @@ parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
 args = parser.parse_args()
 
-with open(args.config_file, 'r') as f:
+# Load configuration files
+with open(args.config_file, "r") as f:
     config = json.load(f)
-
-# Directory of the dataset
-DATASET_DIR = config["dataset_dir"]
-# Name of the dataset files
-DATASET_NAME = config["dataset_name"]
-# Directory where the .npy files of the dataset are stored
-SOURCE_DIR = config["source_dir"]
-# Number of tokens in the complete sequences
-EXAMPLE_TOKEN_LEN = config["example_token_len"]
-# Suffix added to the name of the output file. If preprocessing is not run, this can be "" in the config file
-PREPROCESSING_SUFFIX = config["preprocessing_suffix"]
+(
+    ROOT_DIR, 
+    DATASET_DIR, 
+    SOURCE_DIR, 
+    DATASET_NAME, 
+    EXPERIMENT_NAME,
+    PREPROCESSING,
+    PREPROCESSING_SUFFIX,
+    NORMALIZATION,
+    NUM_TRIALS, 
+    PREFIX_LEN, 
+    SUFFIX_LEN, 
+    PREPREFIX_LEN, 
+    LANGUAGE, 
+    SPLIT, 
+    EXAMPLE_TOKEN_LEN, 
+    SOURCE_FILE, 
+    BATCH_SIZE, 
+    MODEL_NAME, 
+    TRAIN_FILE, 
+    VAL_FILE, 
+    VAL_SPLIT, 
+    SEED
+) = load_constants_from_config(config)
 
 # For dataprocessing we use the GPT-2 tokenizer
 MODEL_NAME = "gpt2"
@@ -60,6 +75,10 @@ def main():
     # Concatenating of sentences will be performed on the smallest dataset of the two to ensure identical sentence pairs
     # Output: A JSONL version of both datasets, aligned such that the set of example IDs is the same for both languages
     
+    if (PREPROCESSING == False):
+        logger.info("==== No preprocessing as specified in %s ====", args.config_file)
+        return
+
     logger.info("==== Starting data preprocessing script ====")
     logger.info("This may take a while depending on the size of the dataset...")
 
@@ -92,7 +111,7 @@ def main():
     # Use the file with complete token counts as input
     in_file = os.path.join(csv_output_file_pattern, DATASET_NAME + "." + smallest_set + ".csv") 
     # Save the concatenated sentences (as lists of exids) in a JSONL file
-    out_file = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + smallest_set + ".jsonl")
+    out_file = os.path.join(csv_output_file_pattern, DATASET_NAME + "." + smallest_set + ".jsonl")
 
     # Make sure out_file exists
     os.makedirs(os.path.dirname(out_file), exist_ok=True)

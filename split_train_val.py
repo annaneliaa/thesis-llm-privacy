@@ -3,7 +3,7 @@ from IPython.display import display
 import os
 import argparse
 import json
-from experiment_lib import load_constants_from_config
+from experiment_lib import load_constants_from_config, get_data_directory
 from torch.utils.data import random_split
 from transformers import set_seed
 import torch
@@ -33,14 +33,15 @@ args = parser.parse_args()
 # Load configuration files
 with open(args.config_file, "r") as f:
     config = json.load(f)
-
 (
     ROOT_DIR, 
     DATASET_DIR, 
     SOURCE_DIR, 
     DATASET_NAME, 
     EXPERIMENT_NAME,
+    PREPROCESSING,
     PREPROCESSING_SUFFIX,
+    NORMALIZATION,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -66,15 +67,14 @@ languages = ["en", "nl"]
 def main():
     logger.info("==== Starting data train+val split script ====")
 
+    # Path where the split and validation datasets will be stored (same directory as the original dataset)
+    dir = get_data_directory(DATASET_DIR, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     # load the dataset
-    data_set_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME)
+    data_set_base = os.path.join(dir, DATASET_NAME)
     eval_percentage = VAL_SPLIT
 
-    # Path where the split and validation datasets will be stored (same directory as the original dataset)
-    output_dir = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN))
-
     # Step 1: split on indices and save them to a file
-    indices_file = os.path.join(output_dir, "split_indices.json")
+    indices_file = os.path.join(dir, "split_indices.json")
 
     # take the size of the first language as the size of the dataset
     # this can be the second one as well, the input datasets are already aligned and identical
@@ -108,8 +108,8 @@ def main():
     logger.info("Splitting datasets into train and validation sets...")
     for lang in languages:
         logger.info(f"Processing language: {lang}")
-        train_out_file = os.path.join(output_dir, "train-" + lang + ".txt")
-        val_out_file = os.path.join(output_dir, "validation-" + lang + ".txt")
+        train_out_file = os.path.join(dir, "train-" + lang + ".txt")
+        val_out_file = os.path.join(dir, "validation-" + lang + ".txt")
 
         # Check if the files already exist
         if os.path.exists(train_out_file) and os.path.exists(val_out_file) and os.path.exists(indices_file):

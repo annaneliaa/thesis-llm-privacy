@@ -1,8 +1,10 @@
 import argparse
 import logging
+import shutil
 from IPython.display import display
 from transformers import AutoTokenizer
 from data_lib import *
+from experiment_lib import load_constants_from_config, get_data_directory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -24,19 +26,33 @@ parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
 args = parser.parse_args()
 
-with open(args.config_file, 'r') as f:
+# Load configuration files
+with open(args.config_file, "r") as f:
     config = json.load(f)
-
-# Directory of the dataset
-DATASET_DIR = config["dataset_dir"]
-# Name of the dataset files
-DATASET_NAME = config["dataset_name"]
-# Directory where the .npy files of the dataset are stored
-SOURCE_DIR = config["source_dir"]
-# Number of tokens in the complete sequences
-EXAMPLE_TOKEN_LEN = config["example_token_len"]
-# Suffix added to the name of the output file. If preprocessing is not run, this can be "" in the config file
-PREPROCESSING_SUFFIX = config["preprocessing_suffix"]
+(
+    ROOT_DIR, 
+    DATASET_DIR, 
+    SOURCE_DIR, 
+    DATASET_NAME, 
+    EXPERIMENT_NAME,
+    PREPROCESSING,
+    PREPROCESSING_SUFFIX,
+    NORMALIZATION,
+    NUM_TRIALS, 
+    PREFIX_LEN, 
+    SUFFIX_LEN, 
+    PREPREFIX_LEN, 
+    LANGUAGE, 
+    SPLIT, 
+    EXAMPLE_TOKEN_LEN, 
+    SOURCE_FILE, 
+    BATCH_SIZE, 
+    MODEL_NAME, 
+    TRAIN_FILE, 
+    VAL_FILE, 
+    VAL_SPLIT, 
+    SEED
+) = load_constants_from_config(config)
 
 # For dataprocessing we use the GPT-2 tokenizer
 MODEL_NAME = "gpt2"
@@ -60,17 +76,35 @@ def main():
 
     logger.info("==== Sarting data processing script ====")
     logger.info("This may take a while depending on the size of the dataset...")
-    # Load the datasets
-    dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME)
+    # dataset_base has the file path of the dataset minus the ending that indicates the language
+    dataset_base = os.path.join(DATASET_DIR, DATASET_NAME)
+    #output_file_pattern is the directory where the output databases are stored
+    output_file_pattern = get_data_directory(DATASET_DIR, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
+    if (PREPROCESSING):
+        dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + PREPROCESSING_SUFFIX)
+    
+    # If there is no normalization, we simply create a jsonl file with the existing datasets, and terminate
+    if (NORMALIZATION == False):
+        for lang in languages:
+            input_file = os.path.join(dataset_base + "." + lang)
+            text_to_jsonlines(input_file, os.path.join(output_file_pattern, DATASET_NAME + "." + lang + ".jsonl"))
+            shutil.copy(input_file, os.path.join(output_file_pattern, DATASET_NAME + "." + lang))
+            logger.info("Generating JSONL for %s...", lang)
+        logger.info("==== Done: No normalization as specified in %s ====", args.config_file)
+        return
+    
+
+    # this is where temporarily created csv files are stored
+    csv_output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN))
+    output_file_pattern = os.path.join(output_file_pattern, "normalized")
 
     # Count the number of tokens in each sentence for both datasets
     # Count the number of sentences that are at least the desired token length
     # Filtering csv files on the basis of token length
     # Generate JSONL version of the datasets for inspection
-    csv_output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN))
     for lang in languages:
-        input_file = os.path.join(dataset_base + PREPROCESSING_SUFFIX + "." + lang)
-        output_file= os.path.join(csv_output_file_pattern, DATASET_NAME + "." + lang + ".csv")
+        input_file = os.path.join(dataset_base + "." + lang)
+        output_file = os.path.join(csv_output_file_pattern, DATASET_NAME + "." + lang + ".csv")
         
         logger.info("Counting tokens for %s...", lang)
         generate_token_count_csv(input_file, output_file, tokenizer)
@@ -80,18 +114,18 @@ def main():
 
         # Filtering csv files on the basis of token length
         logger.info("Filtering sentences for %s...", lang)
-        output_csv = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".csv")
+        output_csv = os.path.join(csv_output_file_pattern, DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + "." + lang + ".csv")
         filter_csv(output_file, output_csv, EXAMPLE_TOKEN_LEN)
 
         logger.info("Generating JSONL for %s...", lang)
         # Assigning NEW exids starting at 1
-        text_to_jsonlines(input_file, os.path.join(dataset_base + "." + lang + ".jsonl"))
+        text_to_jsonlines(input_file, os.path.join(output_file_pattern, DATASET_NAME + "." + lang + ".jsonl"))
 
-    # Compute common example IDs
-    csv_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + ".")
+    # Compute common example ID
+    csv_file_pattern = os.path.join(csv_output_file_pattern, DATASET_NAME + "-" + str(EXAMPLE_TOKEN_LEN) + ".")
     csv_file_lang1 = csv_file_pattern + languages[0] + ".csv"
     csv_file_lang2 = csv_file_pattern + languages[1] + ".csv"
-    output_csv = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN), "common_exids-" + str(EXAMPLE_TOKEN_LEN) + ".csv")
+    output_csv = os.path.join(csv_output_file_pattern, "common_exids-" + str(EXAMPLE_TOKEN_LEN) + ".csv")
 
     common_exids = find_common_exids(csv_file_lang1, csv_file_lang2)
     write_exids_to_file(common_exids, output_csv)
@@ -103,8 +137,8 @@ def main():
     logger.info("%s common example IDs found", len(exid_list))
 
     for lang in languages:
-        input_json_file = os.path.join(dataset_base + "." + lang + ".jsonl")
-        trunc_json_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-temp." + lang + ".jsonl")
+        input_json_file = os.path.join(output_file_pattern, DATASET_NAME  + "." + lang + ".jsonl")
+        trunc_json_file = os.path.join(output_file_pattern, DATASET_NAME + "-temp." + lang + ".jsonl")
         
         # Truncate sentences and put in JSONL format for string comparison after extraction
         trunc_json(input_json_file, trunc_json_file, EXAMPLE_TOKEN_LEN, exid_list, tokenizer)
@@ -112,8 +146,8 @@ def main():
         # JSONL version of the complete dataset is no longer needed, so overwrite it
         os.rename(trunc_json_file, input_json_file)
         
-        #Make text version of jsonl version too, for model training
-        extract_text_from_json(input_json_file, os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + lang))
+        # Make text version of jsonl version too, for model training
+        extract_text_from_json(input_json_file, os.path.join(output_file_pattern, DATASET_NAME + "." + lang))
 
     logger.info("==== Data processing script completed ====")
 

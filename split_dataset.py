@@ -5,7 +5,7 @@ import argparse
 from transformers import AutoTokenizer
 import logging
 from IPython.display import display
-from experiment_lib import load_constants_from_config
+from experiment_lib import load_constants_from_config, get_data_directory, get_npy_directory
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
@@ -28,16 +28,18 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# Load configuration files
 with open(args.config_file, "r") as f:
     config = json.load(f)
-
 (
     ROOT_DIR, 
     DATASET_DIR, 
     SOURCE_DIR, 
     DATASET_NAME, 
     EXPERIMENT_NAME,
+    PREPROCESSING,
     PREPROCESSING_SUFFIX,
+    NORMALIZATION,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -69,13 +71,14 @@ def main():
         LANGUAGE,
         EXAMPLE_TOKEN_LEN,
     )
+    dir = get_data_directory(DATASET_DIR, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
 
     if SPLIT != "":
         logger.info(SPLIT)
-        ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + "-" + SPLIT + ".jsonl"))]
+        ds_files = [open(os.path.join(dir, DATASET_NAME + "." + LANGUAGE + "-" + SPLIT + ".jsonl"))]
     else:
         logger.info("Split: ", SPLIT)
-        ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + ".jsonl"))]
+        ds_files = [open(os.path.join(dir, DATASET_NAME + "." + LANGUAGE + ".jsonl"))]
 
     logger.info("Opened file: %s", str(ds_files[0].name))
 
@@ -107,8 +110,7 @@ def main():
     if not os.path.exists(SOURCE_DIR):
         os.mkdir(SOURCE_DIR)
 
-    npy_arrays_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), MODEL_NAME)
-    os.makedirs(npy_arrays_base, exist_ok=True)
+    npy_arrays_base = get_npy_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
 
     # prompts = [x[1] for x in sorted(prompts.items())]
     prompts = [x[1] for x in prompts.items()]
@@ -117,15 +119,15 @@ def main():
     # save the token sequences to .npy files to be used in model generation
     np.save(os.path.join(npy_arrays_base, SPLIT + "_dataset.npy"), prompts)
     # split the tokens into preprefix, prefix, and suffix
-    if EXAMPLE_TOKEN_LEN > 100:
+    if EXAMPLE_TOKEN_LEN > (PREFIX_LEN+SUFFIX_LEN):
         np.save(
-            os.path.join(npy_arrays_base, SPLIT + "_preprefix.npy"), prompts[:, :(EXAMPLE_TOKEN_LEN-100)]
+            os.path.join(npy_arrays_base, SPLIT + "_preprefix.npy"), prompts[:, :PREPREFIX_LEN]
         )
     np.save(
-        os.path.join(npy_arrays_base, SPLIT + "_prefix.npy"), prompts[:, (EXAMPLE_TOKEN_LEN-100):(EXAMPLE_TOKEN_LEN-50)]
+        os.path.join(npy_arrays_base, SPLIT + "_prefix.npy"), prompts[:, PREPREFIX_LEN:(PREPREFIX_LEN+PREFIX_LEN)]
     )
     np.save(
-        os.path.join(npy_arrays_base, SPLIT + "_suffix.npy"), prompts[:, (EXAMPLE_TOKEN_LEN - 50):EXAMPLE_TOKEN_LEN]
+        os.path.join(npy_arrays_base, SPLIT + "_suffix.npy"), prompts[:, (EXAMPLE_TOKEN_LEN - SUFFIX_LEN):EXAMPLE_TOKEN_LEN]
     )
 
     logger.info("===== Done ======")

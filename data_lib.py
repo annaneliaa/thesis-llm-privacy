@@ -191,6 +191,8 @@ def generate_byte_dataset_jsonl(source_dir, input_file, output_file, tokenizer):
 # Function to generate a jsonlines version of dataset
 # input here is a text file
 def text_to_jsonlines(input_file, output_file):
+    output_dir = os.path.dirname(output_file)  # Get the directory part of output_file
+    os.makedirs(output_dir, exist_ok=True)  # Create the directory, if it does not exist yet
     with open(input_file, "r", encoding="utf-8") as f_input, \
          open(output_file, "w", encoding="utf-8") as f_output:
         id = 1

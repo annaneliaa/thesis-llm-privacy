@@ -184,8 +184,11 @@ def load_constants_from_config(config):
     DATASET_NAME = config["dataset_name"]
     # Name of the experiment
     EXPERIMENT_NAME = config["experiment_name"]
-    # Suffix appended to the name of the output file after preprocessing
-    PREPROCESSING_SUFFIX = config["preprocessing_suffix"]
+    # Boolean indicating whether preprocessing runs / has been run
+    PREPROCESSING = config["preprocessing"]
+    # Boolean indicating whether the sentence length has been normalized to EXAMPLE_TOKEN_LEN
+    PREPROCESSING_SUFFIX = "-pre"
+    NORMALIZATION = config["normalization"]
     # Number of trials
     NUM_TRIALS = config["num_trials"]
     # Language of the scenario (EN/NL)
@@ -211,8 +214,33 @@ def load_constants_from_config(config):
     VAL_SPLIT = config["validation_split_percentage"]
     SEED = config["seed"]
 
-    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, PREPROCESSING_SUFFIX, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, VAL_SPLIT, SEED)
+    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, PREPROCESSING, PREPROCESSING_SUFFIX, NORMALIZATION, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, VAL_SPLIT, SEED)
 
+def get_data_directory(dataset_dir, preprocessing: bool, normalization: bool, example_token_len = 0):
+    dir = os.path.join(dataset_dir)
+    if (preprocessing):
+        dir = os.path.join(dir, str(example_token_len))
+    else:
+        dir = dir = os.path.join(dir, "raw")
+    if (normalization):
+        dir = os.path.join(dir, "normalized")
+    else:
+        dir = dir = os.path.join(dir, "natural")
+    os.makedirs(dir, exist_ok=True)
+    return dir
+
+def get_npy_directory(source_dir, dataset_dir, language, preprocessing: bool, normalization: bool, example_token_len = 0):
+    dir = os.path.join(source_dir, dataset_dir, language)
+    if (preprocessing):
+        dir = os.path.join(dir, str(example_token_len))
+    else:
+        dir = dir = os.path.join(dir, "raw")
+    if (normalization):
+        dir = os.path.join(dir, "normalized")
+    else:
+        dir = dir = os.path.join(dir, "natural")
+    os.makedirs(dir, exist_ok=True)
+    return dir
 
 def text_to_csv(dir, train_file, val_file):
     with open(train_file, encoding='utf-8') as txtfile:
