@@ -3,9 +3,10 @@
     "dataset_dir": "EMEA",
     "source_dir": "./datasets",
     "dataset_name": "EMEA-c",
-    "experiment_name": "en-100-100-1.3B",
-    "preprocessing_suffix": "-pre",
-    "num_trials": 50,
+    "experiment_name": "en-100-nat-1.3B",
+    "preprocessing": true,
+    "normalization": false,
+    "num_trials": 100,
     "language": "en",
     "split": "train",
     "suffix_len": 50,
@@ -15,9 +16,8 @@
     "source_file": "train_dataset.npy",
     "batch_size": 64,
     "model": "EleutherAI/gpt-neo-1.3B",
-    "train_file": "EMEA/100/train-en.txt",
-    "validation_file": "EMEA/100/validation-en.txt",
+    "train_file": "EMEA/100/natural/train-en.txt",
+    "validation_file": "EMEA/100/natural/validation-en.txt",
     "validation_split_percentage": 0.1,
-    "seed": 42,
-    "num_trial": 50
+    "seed": 42
 }

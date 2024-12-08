@@ -2,8 +2,10 @@
     "root_dir": "tmp/",
     "dataset_dir": "EMEA",
     "source_dir": "./datasets",
-    "dataset_name": "EMEA-c-100",
-    "experiment_name": "nl-100-100-6B",
+    "dataset_name": "EMEA-c",
+    "experiment_name": "nl-100-nat-6B",
+    "preprocessing": true,
+    "normalization": false,
     "num_trials": 100,
     "language": "nl",
     "split": "train",
@@ -13,10 +15,9 @@
     "preprefix_len": 0,
     "source_file": "train_dataset.npy",
     "batch_size": 64,
-    "model": "EleutherAI/gpt-j-6b",
-    "train_file": "EMEA/100/train-nl.txt",
-    "validation_file": "EMEA/100/validation-nl.txt",
+    "model": "EleutherAI/gpt-j-6B",
+    "train_file": "EMEA/100/natural/train-nl.txt",
+    "validation_file": "EMEA/100/natural/validation-nl.txt",
     "validation_split_percentage": 0.1,
-    "seed": 42,
-    "num_trial": 50
+    "seed": 42
 }
