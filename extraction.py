@@ -8,6 +8,7 @@ import json
 import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from experiment_lib import *
+from util_lib import *
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -32,17 +33,19 @@ parser.add_argument("--cache_dir", type=str, required=False, help="Path to the c
 
 args = parser.parse_args()
 
-with open(args.config_file, 'r') as f:
+# Load configuration files
+with open(args.config_file, "r") as f:
     config = json.load(f)
 
-# Load constants from config
 (
     ROOT_DIR, 
     DATASET_DIR, 
     SOURCE_DIR, 
     DATASET_NAME, 
     EXPERIMENT_NAME,
-    PREPROCESSING_SUFFIX, 
+    PREPROCESSING,
+    PREPROCESSING_SUFFIX,
+    NORMALIZATION,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -83,7 +86,7 @@ if args.cache_dir:
     cache_dir = args.cache_dir
 else:
     # Get cache dir from .env
-    cache_dir = "/scratch/s4079876"
+    cache_dir = "/scratch/s5202841"
 
 # Load model and tokenizer
 try:
@@ -170,12 +173,9 @@ def main():
     os.makedirs(generations_base, exist_ok=True)
     losses_base = os.path.join(experiment_base, "losses")
     os.makedirs(losses_base, exist_ok=True)
-    prompts_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), HGmodel)
-
+    prompts_base = get_npy_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     logger.info("Loading prompts from numpy file")
     prompts = load_prompts(prompts_base, SPLIT + "_prefix.npy", PREPREFIX_LEN, SPLIT)
-
-    # all_generations, all_losses = [], []
 
     # if experiment is not done before, generate new data
     if not all([os.listdir(generations_base), os.listdir(losses_base)]):

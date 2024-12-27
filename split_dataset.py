@@ -5,22 +5,13 @@ import argparse
 from transformers import AutoTokenizer
 import logging
 from IPython.display import display
-from experiment_lib import load_constants_from_config, get_data_directory, get_npy_directory
+from util_lib import *
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")
 
-
-class JupyterHandler(logging.Handler):
-    def emit(self, record):
-        display(self.format(record))
-
-
 # set up logger
-logger = logging.getLogger()
-handler = JupyterHandler()
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger = initLogger()
 
 parser = argparse.ArgumentParser(description="Process input from config file.")
 parser.add_argument(
@@ -57,8 +48,8 @@ with open(args.config_file, "r") as f:
 ) = load_constants_from_config(config)
 
 # Set up tokenizer
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-tokenizer.add_special_tokens({"pad_token": ""})
+tokenizer = initTokenizer()
+pad_token_id = tokenizer.pad_token_id
 
 def main():
     # Input: A dataset file with sentences in a specific language in JSONL format

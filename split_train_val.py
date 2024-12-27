@@ -3,7 +3,7 @@ from IPython.display import display
 import os
 import argparse
 import json
-from experiment_lib import load_constants_from_config, get_data_directory
+from util_lib import *
 from torch.utils.data import random_split
 from transformers import set_seed
 import torch
@@ -13,15 +13,8 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-class JupyterHandler(logging.Handler):
-    def emit(self, record):
-        display(self.format(record))
-
 # Set up logger
-logger = logging.getLogger()
-handler = JupyterHandler()
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger = initLogger()
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Process config input.")

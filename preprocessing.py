@@ -1,24 +1,16 @@
 import argparse
 import logging
 from IPython.display import display
-from transformers import AutoTokenizer
 from data_lib import *
-from experiment_lib import load_constants_from_config
+from util_lib import *
 
 INF = float("inf")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-class JupyterHandler(logging.Handler):
-    def emit(self, record):
-        display(self.format(record))
-
 # Set up logger
-logger = logging.getLogger()
-handler = JupyterHandler()
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger = initLogger()
 
 logger.info("Parsing arguments...")
 
@@ -60,12 +52,7 @@ MODEL_NAME = "gpt2"
 languages = ["en", "nl"]
 
 # Load tokenizer
-logger.info("Loading tokenizer...")
-try:
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-except Exception as e:
-    logger.error(f"Error loading tokenizer: {e}")
-    raise e
+tokenizer = initTokenizer(MODEL_NAME)
 
 def main():
     # Input: Two parallel datasets where each line is a sentence, in english and dutch (or LANG1 and LANG2)

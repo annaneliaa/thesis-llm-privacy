@@ -4,20 +4,13 @@ import shutil
 from IPython.display import display
 from transformers import AutoTokenizer
 from data_lib import *
-from experiment_lib import load_constants_from_config, get_data_directory
+from util_lib import *
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-class JupyterHandler(logging.Handler):
-    def emit(self, record):
-        display(self.format(record))
-
 # Set up logger
-logger = logging.getLogger()
-handler = JupyterHandler()
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger = initLogger()
 
 logger.info("Parsing arguments...")
 
@@ -59,12 +52,7 @@ MODEL_NAME = "gpt2"
 languages = ["en", "nl"]
 
 # Load tokenizer
-logger.info("Loading tokenizer...")
-try:
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-except Exception as e:
-    logger.error(f"Error loading tokenizer: {e}")
-    raise e
+tokenizer = initTokenizer(model_name=MODEL_NAME)
 
 def main():
     # Input: Two parallel datasets where each line is a sentence, in english and dutch (or LANG1 and LANG2)
@@ -83,13 +71,13 @@ def main():
     if (PREPROCESSING):
         dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + PREPROCESSING_SUFFIX)
     
-    # If there is no normalization, we simply create a jsonl file with the existing datasets, and terminate
+    # If there is no normalization, we simply create a jsonl file with the existing datasets, copy the existing dataset to the appropriate directory, and terminate
     if (NORMALIZATION == False):
         for lang in languages:
             input_file = os.path.join(dataset_base + "." + lang)
+            logger.info("Generating JSONL for %s...", lang)
             text_to_jsonlines(input_file, os.path.join(output_file_pattern, DATASET_NAME + "." + lang + ".jsonl"))
             shutil.copy(input_file, os.path.join(output_file_pattern, DATASET_NAME + "." + lang))
-            logger.info("Generating JSONL for %s...", lang)
         logger.info("==== Done: No normalization as specified in %s ====", args.config_file)
         return
     
