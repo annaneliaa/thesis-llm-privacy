@@ -13,22 +13,15 @@ from IPython.display import display
 import os
 import argparse
 import json
-from experiment_lib import load_constants_from_config
+from util_lib import *
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-class JupyterHandler(logging.Handler):
-    def emit(self, record):
-        display(self.format(record))
-
 # Set up logger
-logger = logging.getLogger()
-handler = JupyterHandler()
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger = initLogger()
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Process config input.")
@@ -42,14 +35,15 @@ args = parser.parse_args()
 # Load configuration files
 with open(args.config_file, "r") as f:
     config = json.load(f)
-
 (
     ROOT_DIR, 
     DATASET_DIR, 
     SOURCE_DIR, 
     DATASET_NAME, 
     EXPERIMENT_NAME,
+    PREPROCESSING,
     PREPROCESSING_SUFFIX,
+    NORMALIZATION,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -101,32 +95,21 @@ logger.info("==== Starting trainer script ====")
 
 logger.info("Experiment name %s", EXPERIMENT_NAME)
 
+tokenizer = initTokenizer()
 logger.info("Loading model...")
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(
     DEFAULT_DEVICE
 )
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-
-# Set the padding token to the EOS token
-tokenizer.pad_token = tokenizer.eos_token
+model.resize_token_embeddings(len(tokenizer))
 
 print("Model max length:", tokenizer.model_max_length)
 
 # Load the training and validation sets
-# Read and tokenize training dataset
-with open(TRAIN_FILE, "r") as f:
-    train = f.readlines()
+source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
+train = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
+val = torch.load(os.path.join(source_dir, "validation-" + LANGUAGE + ".pt"))
 
-tokenized_sentences = tokenizer(train, padding=True, truncation=True, return_tensors="pt")
-# the sentences are lists of token ids
-print("Number of sentences:", len(tokenized_sentences["input_ids"]))
-
-# Read and tokenize evaluation dataset
-with open(VAL_FILE, "r") as f:
-    val = f.readlines()
-
-tokenized_eval_sentences = tokenizer(val, padding=True, truncation=True, return_tensors="pt")
-print("Number of validation sentences:", len(tokenized_eval_sentences["input_ids"]))
+print("Number of validation sentences:", len(val["input_ids"]))
 
 # Training set up
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False, return_tensors="pt")
@@ -145,14 +128,6 @@ class SentencesDataset(Dataset):
             "attention_mask": torch.tensor(self.attention_masks[idx], dtype=torch.long),
         }
         return item
-
-# Instantiate the datasets
-dataset = SentencesDataset(
-    tokenized_sentences["input_ids"], tokenized_sentences["attention_mask"]
-)
-eval_dataset = SentencesDataset(
-    tokenized_eval_sentences["input_ids"], tokenized_eval_sentences["attention_mask"]
-)
 
 # Training args for model 
 default_args = {
@@ -179,20 +154,29 @@ default_args = {
 if args.epochs:
     default_args["num_train_epochs"] = args.epochs
 
-training_args = TrainingArguments(**default_args)
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=dataset,
-    eval_dataset=eval_dataset,
-    data_collator=data_collator,
+# Instantiate the validation dataset
+eval_dataset = SentencesDataset(
+    val["input_ids"], val["attention_mask"]
 )
+# train the model on all batches of training data
+for i,tokenized_sentences in enumerate(train):
+    dataset = SentencesDataset(
+        tokenized_sentences["input_ids"], tokenized_sentences["attention_mask"]
+    )
+    training_args = TrainingArguments(**default_args)
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=dataset,
+        eval_dataset=eval_dataset,
+        data_collator=data_collator,
+    )
+    logger.info("Training model for %d epochs on batch %d", training_args.num_train_epochs, i)
+    result = trainer.train()
+    print_summary(result)
 
-logger.info("Training model for %d epochs", training_args.num_train_epochs)
-result = trainer.train()
 logger.info("Training finished.")
 
-print_summary(result)
 
 logger.info("Saving model to %s", output_dir)
 # Save model and tokenizer

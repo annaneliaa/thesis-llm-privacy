@@ -48,7 +48,7 @@ with open(args.config_file, "r") as f:
 ) = load_constants_from_config(config)
 
 # Set up tokenizer
-tokenizer = initTokenizer()
+tokenizer = initTokenizer(MODEL_NAME)
 pad_token_id = tokenizer.pad_token_id
 
 def main():
@@ -101,7 +101,7 @@ def main():
     if not os.path.exists(SOURCE_DIR):
         os.mkdir(SOURCE_DIR)
 
-    npy_arrays_base = get_npy_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
+    npy_arrays_base = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
 
     # prompts = [x[1] for x in sorted(prompts.items())]
     prompts = [x[1] for x in prompts.items()]

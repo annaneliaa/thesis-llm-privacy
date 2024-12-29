@@ -124,25 +124,6 @@ def main():
         with open(val_out_file, "w") as f:
             f.writelines(eval_dataset)
 
-        # Generate JSONL version of the training set for extraction
-        # open JSONL version of the whole dataset
-        with open(os.path.join(dataset_path + ".jsonl") , "r") as f, open(indices_file, "r") as idx_file:
-            # Read all lines into a list
-            dataset_jsonl = f.readlines()
-
-            output_file = os.path.join(dataset_path + "-train.jsonl")
-            print(f"Output file: {output_file}")  # Debug print
-
-            with open(output_file, "w") as out_file:
-
-                # iterate over all train_indices
-                train_indices = json.load(idx_file)["train"]
-    
-                for index in train_indices:
-                    json_obj = json.loads(dataset_jsonl[index])
-                    json.dump(json_obj, out_file, ensure_ascii=False)      
-                    out_file.write("\n")
-
     logger.info("==== Data train+val split script completed ====")
 
 if __name__ == "__main__":

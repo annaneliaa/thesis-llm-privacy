@@ -86,7 +86,7 @@ def get_data_directory(dataset_dir, preprocessing: bool, normalization: bool, ex
     os.makedirs(dir, exist_ok=True)
     return dir
 
-def get_npy_directory(source_dir, dataset_dir, language, preprocessing: bool, normalization: bool, example_token_len = 0):
+def get_source_directory(source_dir, dataset_dir, language, preprocessing: bool, normalization: bool, example_token_len = 0):
     dir = os.path.join(source_dir, dataset_dir, language)
     if (preprocessing):
         dir = os.path.join(dir, str(example_token_len))

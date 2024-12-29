@@ -173,7 +173,7 @@ def main():
     os.makedirs(generations_base, exist_ok=True)
     losses_base = os.path.join(experiment_base, "losses")
     os.makedirs(losses_base, exist_ok=True)
-    prompts_base = get_npy_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
+    prompts_base = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     logger.info("Loading prompts from numpy file")
     prompts = load_prompts(prompts_base, SPLIT + "_prefix.npy", PREPREFIX_LEN, SPLIT)
 

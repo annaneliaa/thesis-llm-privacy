@@ -3,7 +3,8 @@ import json
 from IPython.display import display
 from experiment_lib import *
 import logging
-from time import sleep 
+from time import sleep
+from util_lib import load_constants_from_config
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s")

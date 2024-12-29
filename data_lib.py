@@ -4,6 +4,8 @@ import json
 import os
 import nltk
 import numpy as np
+from transformers import AutoTokenizer
+from util_lib import initTokenizer
 
 
 # function to count the number of examples in a dataset file with more tokens than a given threshold
@@ -485,3 +487,69 @@ def text_to_jsonlines_exids(input_file, output_file, exids):
             # Write the JSON object to the output file as a single line
             json.dump(json_object, f_output, ensure_ascii=False)
             f_output.write('\n')
+
+# pads the prompts in batches of approximately the same sizes to minimize padding
+# input: A tokenizer, as well as a dictionary of prompts mapped to their id
+# returns a list of tensors where every tensor contains equally long (padded) prompts, 
+# their attention masks, and the ids of the sentences in the batch (in order)
+def tokenize_prompts_in_batches(tokenizer: AutoTokenizer, prompts: dict):
+    # Write the prompts into a list, and sort the list based on the prompt lengths, then make it a dict again
+    print("Sorting %d sentences based on their token length.", len(prompts.keys()))
+    prompts = sorted(prompts.items(), key=lambda item: len(tokenizer.encode(item[1])))
+    prompts_ids = [key for key,_ in prompts]
+    prompts_strings = [value for _,value in prompts]
+
+    # all sentences will be padded to the next biggest size that is a multiple of padding_steps
+    PADDING_STEPS = 50
+    MAX_LENGTH = 512
+    # set the starting sentence length
+    prompt_len = len(tokenizer.encode(prompts_strings[0]))
+    sentence_len = prompt_len if (prompt_len % PADDING_STEPS) == 0 else prompt_len - (prompt_len % PADDING_STEPS) + PADDING_STEPS
+    lower_bound_prompts_idx = 0
+    out_prompts = []
+    for i,prompt in enumerate(prompts_strings):
+        # if the max length has been reached, the loop will terminate after tokenizing the rest of the prompts.
+        if sentence_len >= MAX_LENGTH:
+            break
+        # if the prompt's size "fits" the max size for the current batch, go to the next prompt   
+        elif len(tokenizer.encode(prompt)) <= sentence_len or lower_bound_prompts_idx == i:
+            continue
+        # pad all prompts that have been detected to have approximately the same length, and store them in out_prompts
+        print("Tokenizing batch of sentences from %d to %d with length %d", lower_bound_prompts_idx, i, sentence_len)
+        tokenized = tokenizer(
+            prompts_strings[lower_bound_prompts_idx:i],
+            padding="max_length",
+            max_length= sentence_len,
+            truncation = True,
+            return_tensors="pt"
+        )
+        # add the tokens, their attention masks, and the ids of the tokenized sentences to the return data
+        out_prompts.append(
+            {
+                "input_ids": tokenized["input_ids"],
+                "attention_mask": tokenized["attention_mask"],
+                "sentence_ids": prompts_ids[lower_bound_prompts_idx:i]
+            }
+        )
+        while sentence_len <= len(tokenizer.encode(prompt)):
+            sentence_len = sentence_len + PADDING_STEPS
+        lower_bound_prompts_idx = i
+    
+    # tokenize the last batch
+    print("Tokenizing batch of sentences from %d to the end of the input with length %d", lower_bound_prompts_idx, min(sentence_len, MAX_LENGTH))
+    tokenized = tokenizer(
+        prompts_strings[lower_bound_prompts_idx:],
+        padding="max_length",
+        max_length= min(sentence_len, MAX_LENGTH),
+        truncation = True,
+        return_tensors="pt"
+    )
+    # add the tokens, their attention masks, and the ids of the tokenized sentences to the return data
+    out_prompts.append(
+        {
+            "input_ids": tokenized["input_ids"],
+            "attention_mask": tokenized["attention_mask"],
+            "sentence_ids": prompts_ids[lower_bound_prompts_idx:i]
+        }
+    )
+    return out_prompts

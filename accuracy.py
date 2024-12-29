@@ -5,6 +5,7 @@ import logging
 from IPython.display import display
 import argparse
 from experiment_lib import *
+from util_lib import load_constants_from_config
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
