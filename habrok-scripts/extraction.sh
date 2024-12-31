@@ -10,7 +10,7 @@ module load Python/3.11.3-GCCcore-12.3.0
 module load CUDA/11.7.0
 module load Boost/1.79.0-GCC-11.3.0
 
-source $HOME/.env/bin/activate
+source $HOME/thesis-llm-privacy/.env/bin/activate
 
 python ./extraction.py --config_file config.json
 
