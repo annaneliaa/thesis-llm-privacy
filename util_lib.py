@@ -17,7 +17,6 @@ def initLogger():
     logger.setLevel(logging.INFO)
     return logger
 
-# unnecessary constants: TRAIN_FILE, VAL_FILE, SEED (only in split_train_val)
 def load_constants_from_config(config):
     # For saving results
     ROOT_DIR = config["root_dir"]
@@ -31,9 +30,12 @@ def load_constants_from_config(config):
     EXPERIMENT_NAME = config["experiment_name"]
     # Boolean indicating whether preprocessing runs / has been run
     PREPROCESSING = config["preprocessing"]
-    # Boolean indicating whether the sentence length has been normalized to EXAMPLE_TOKEN_LEN
+    # Standard suffix used in file name
     PREPROCESSING_SUFFIX = "-pre"
+    # Boolean indicating whether the sentence length has been normalized to EXAMPLE_TOKEN_LEN
     NORMALIZATION = config["normalization"]
+    # Boolean indicating whether the tokenization is done in batches. If normalization is true, this is rather irrelevant.
+    BATCHING = config["batching"]
     # Number of trials
     NUM_TRIALS = config["num_trials"]
     # Language of the scenario (EN/NL)
@@ -54,12 +56,11 @@ def load_constants_from_config(config):
     BATCH_SIZE = config["batch_size"]
     # Name of the model to use
     MODEL_NAME = config["model"]
-    TRAIN_FILE = config["train_file"]
-    VAL_FILE = config["validation_file"]
+    # The percentage of the dataset that will be used for validation.
     VAL_SPLIT = config["validation_split_percentage"]
     SEED = config["seed"]
 
-    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, PREPROCESSING, PREPROCESSING_SUFFIX, NORMALIZATION, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, VAL_SPLIT, SEED)
+    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, PREPROCESSING, PREPROCESSING_SUFFIX, NORMALIZATION, BATCHING, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, VAL_SPLIT, SEED)
 
 
 def initTokenizer(model_name: str):

@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import json
 import argparse
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM
 from util_lib import *
 from experiment_lib import *
 from data_lib import tokenize_prompts_in_batches
@@ -30,7 +30,6 @@ args = parser.parse_args()
 # Load configuration files
 with open(args.config_file, "r") as f:
     config = json.load(f)
-
 (
     ROOT_DIR, 
     DATASET_DIR, 
@@ -40,6 +39,7 @@ with open(args.config_file, "r") as f:
     PREPROCESSING,
     PREPROCESSING_SUFFIX,
     NORMALIZATION,
+    BATCHING,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -49,9 +49,7 @@ with open(args.config_file, "r") as f:
     EXAMPLE_TOKEN_LEN, 
     SOURCE_FILE, 
     BATCH_SIZE, 
-    MODEL_NAME, 
-    TRAIN_FILE, 
-    VAL_FILE, 
+    MODEL_NAME,
     VAL_SPLIT, 
     SEED
 ) = load_constants_from_config(config)
@@ -133,26 +131,27 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
             # Get the data for the current batch, and realign it
             prompt_batch = input_ids[off:off+batch_size]
             attention_masks_batch = attention_masks[off:off+batch_size]
+            # TODO: Prompt batch would be a tensor, can we call np.stack on a tensor (same for attention masks)?
             prompt_batch = np.stack(prompt_batch, axis=0)
             attention_masks_batch = np.stack(attention_masks_batch, axis=0)
-            input_ids = torch.tensor(prompt_batch, dtype=torch.int64).to(DEFAULT_DEVICE)
+            input_ids_batch = torch.tensor(prompt_batch, dtype=torch.int64).to(DEFAULT_DEVICE)
 
             with torch.no_grad():
                 # Pass through the model to obtain the logits
-                outputs = model(input_ids.to(DEFAULT_DEVICE))
+                outputs = model(input_ids_batch.to(DEFAULT_DEVICE), labels=input_ids_batch.to(DEFAULT_DEVICE))
                 # Store the logits (shape: (batch_size, sequence_length, vocab_size), sequence length is the length of each prompt)
                 logits = outputs.logits.cpu().detach()
                 # reshape logits into shape (batch_size * (sequence_length-1), vocab_size)
                 logits = logits[:, :-1].reshape((-1, logits.shape[-1])).float()
                 # calculate the loss per token by taking the cross_entropy, returned shape is (batch_size*(sequence_length-1))
                 loss_per_token = torch.nn.functional.cross_entropy(
-                    logits, input_ids[:, 1:].flatten(), reduction="none"
+                    logits, input_ids_batch[:, 1:].flatten(), reduction="none"
                 )
                 # Reshape to get an array of shape (batch_size, sequence_length-1) (so every row represents one prompt)
                 # Then calculate the likelihood for each row (sentence), and append the resulting array to batch_losses
-                batch_losses.append(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1))))
+                batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1))))
         # concatenate all the loss scores for this batch of prompts of equal length, and append it to the list of losses per prompt batch
-        losses.append(torch.cat(batch_losses))
+        losses.append(batch_losses)
     return losses
 
 
@@ -186,8 +185,12 @@ def main():
     os.makedirs(experiment_base, exist_ok=True)
     # Get the prompts
     prompts = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
+    if not BATCHING:
+        prompts = [prompts]
     # Do the membership inference attack and save the results
     mia_results = mia_comp(prompts, BATCH_SIZE)
+    if not BATCHING:
+        mia_results = mia_results[0]
     torch.save(mia_results, os.path.join(experiment_base, "mia.pt"))    
 
 if __name__ == "__main__":

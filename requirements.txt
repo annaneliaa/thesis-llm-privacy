@@ -3,5 +3,6 @@ nltk
 numpy
 torch
 transformers
+transformers[torch]
 matplotlib
 pynvml

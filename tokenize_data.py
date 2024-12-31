@@ -33,6 +33,7 @@ with open(args.config_file, "r") as f:
     PREPROCESSING,
     PREPROCESSING_SUFFIX,
     NORMALIZATION,
+    BATCHING,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -42,9 +43,7 @@ with open(args.config_file, "r") as f:
     EXAMPLE_TOKEN_LEN, 
     SOURCE_FILE, 
     BATCH_SIZE, 
-    MODEL_NAME, 
-    TRAIN_FILE, 
-    VAL_FILE, 
+    MODEL_NAME,
     VAL_SPLIT, 
     SEED
 ) = load_constants_from_config(config)
@@ -85,7 +84,11 @@ def main():
         # Create the train and eval datasets using the indices
         train_dataset_map = {train_indices[i]: train_data[i] for i in range(len(train_indices))}
         # Tokenize the datasets
-        tokenized_train_dataset = tokenize_prompts_in_batches(tokenizer, train_dataset_map)
+        if BATCHING:
+            tokenized_train_dataset = tokenize_prompts_in_batches(tokenizer, train_dataset_map)
+        else:
+            # this call pads to the longest sequence in the dataset, and truncates to max_length
+            tokenized_train_dataset = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
         tokenized_eval_sentences = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
 
         # Save train and eval datasets to files

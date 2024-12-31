@@ -33,14 +33,16 @@ args = parser.parse_args()
 
 with open(args.config_file, "r") as f:
     config = json.load(f)
-
 (
     ROOT_DIR, 
     DATASET_DIR, 
     SOURCE_DIR, 
     DATASET_NAME, 
     EXPERIMENT_NAME,
+    PREPROCESSING,
     PREPROCESSING_SUFFIX,
+    NORMALIZATION,
+    BATCHING,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -50,12 +52,10 @@ with open(args.config_file, "r") as f:
     EXAMPLE_TOKEN_LEN, 
     SOURCE_FILE, 
     BATCH_SIZE, 
-    MODEL_NAME, 
-    TRAIN_FILE, 
-    VAL_FILE, 
+    MODEL_NAME,
     VAL_SPLIT, 
     SEED
-    ) = load_constants_from_config(config)
+) = load_constants_from_config(config)
 
 assert((NUM_TRIALS == 100))
 

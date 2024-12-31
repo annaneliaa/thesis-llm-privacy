@@ -44,6 +44,7 @@ with open(args.config_file, "r") as f:
     PREPROCESSING,
     PREPROCESSING_SUFFIX,
     NORMALIZATION,
+    BATCHING,
     NUM_TRIALS, 
     PREFIX_LEN, 
     SUFFIX_LEN, 
@@ -53,9 +54,7 @@ with open(args.config_file, "r") as f:
     EXAMPLE_TOKEN_LEN, 
     SOURCE_FILE, 
     BATCH_SIZE, 
-    MODEL_NAME, 
-    TRAIN_FILE, 
-    VAL_FILE, 
+    MODEL_NAME,
     VAL_SPLIT, 
     SEED
 ) = load_constants_from_config(config)
@@ -95,7 +94,7 @@ logger.info("==== Starting trainer script ====")
 
 logger.info("Experiment name %s", EXPERIMENT_NAME)
 
-tokenizer = initTokenizer()
+tokenizer = initTokenizer(MODEL_NAME)
 logger.info("Loading model...")
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(
     DEFAULT_DEVICE
@@ -103,13 +102,6 @@ model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(
 model.resize_token_embeddings(len(tokenizer))
 
 print("Model max length:", tokenizer.model_max_length)
-
-# Load the training and validation sets
-source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
-train = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
-val = torch.load(os.path.join(source_dir, "validation-" + LANGUAGE + ".pt"))
-
-print("Number of validation sentences:", len(val["input_ids"]))
 
 # Training set up
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False, return_tensors="pt")
@@ -132,8 +124,8 @@ class SentencesDataset(Dataset):
 # Training args for model 
 default_args = {
     "output_dir": output_dir,
-    "evaluation_strategy": "steps",
-    "eval_steps": 1000,
+    "eval_strategy": "steps",
+    "eval_steps": 250,
     # save steps is a high number to avoid overflow of storage disk on Habrok (we dont want to store all intermediate versions of the model)
     "save_steps": 10000,
     "save_total_limit": 3,
@@ -144,7 +136,8 @@ default_args = {
     "num_train_epochs": 1,
     "log_level": "error",
     "report_to": "none",
-    "per_device_train_batch_size": 1,
+    "per_device_train_batch_size": 8,
+    #"learning_rate": 1e-04,
     "gradient_accumulation_steps": 4,
     "gradient_checkpointing": True,
     "fp16": True,
@@ -154,23 +147,34 @@ default_args = {
 if args.epochs:
     default_args["num_train_epochs"] = args.epochs
 
+# Load the training and validation sets
+source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
+train = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
+val = torch.load(os.path.join(source_dir, "validation-" + LANGUAGE + ".pt"))
+
+print("Number of validation sentences:", len(val["input_ids"]))
+
 # Instantiate the validation dataset
 eval_dataset = SentencesDataset(
     val["input_ids"], val["attention_mask"]
+)
+# if the input is not in batches, wrap the input. The following loop will simply run for one iteration
+if not BATCHING:
+    train = [train]
+# initialize the trainer
+training_args = TrainingArguments(**default_args)
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    eval_dataset=eval_dataset,
+    data_collator=data_collator,
 )
 # train the model on all batches of training data
 for i,tokenized_sentences in enumerate(train):
     dataset = SentencesDataset(
         tokenized_sentences["input_ids"], tokenized_sentences["attention_mask"]
     )
-    training_args = TrainingArguments(**default_args)
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=dataset,
-        eval_dataset=eval_dataset,
-        data_collator=data_collator,
-    )
+    trainer.train_dataset = dataset
     logger.info("Training model for %d epochs on batch %d", training_args.num_train_epochs, i)
     result = trainer.train()
     print_summary(result)

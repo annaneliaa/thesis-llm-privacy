@@ -6,6 +6,7 @@
     "experiment_name": "nl-raw-nat-6B",
     "preprocessing": false,
     "normalization": false,
+    "batching": true,
     "num_trials": 100,
     "language": "nl",
     "split": "train",
@@ -16,8 +17,6 @@
     "source_file": "train_dataset.npy",
     "batch_size": 64,
     "model": "EleutherAI/gpt-j-6B",
-    "train_file": "EMEA/raw/natural/train-nl.txt",
-    "validation_file": "EMEA/raw/natural/validation-nl.txt",
     "validation_split_percentage": 0.1,
     "seed": 42
 }
