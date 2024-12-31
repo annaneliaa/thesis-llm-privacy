@@ -11,10 +11,8 @@ module load Python/3.11.3-GCCcore-12.3.0
 module load CUDA/11.7.0
 module load Boost/1.79.0-GCC-11.3.0
 
-source $HOME/venvs/torch/bin/activate
+source $HOME/.env/bin/activate
 
 python ./trainer.py --config_file exp-configs/EMEA/100/config-2.7B-nl.json
-
-python ./extraction.py --config_file exp-configs/EMEA/100/config-2.7B-nl.json --model_dir /scratch/s5202841/finetuned/EMEA/nl-100-100-2.7B
 
 deactivate
