@@ -549,7 +549,7 @@ def tokenize_prompts_in_batches(tokenizer: AutoTokenizer, prompts: dict):
         {
             "input_ids": tokenized["input_ids"],
             "attention_mask": tokenized["attention_mask"],
-            "sentence_ids": prompts_ids[lower_bound_prompts_idx:i]
+            "sentence_ids": prompts_ids[lower_bound_prompts_idx:]
         }
     )
     return out_prompts

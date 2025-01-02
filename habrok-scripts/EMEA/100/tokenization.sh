@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --time=04:00:00
+#SBATCH --time=01:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --job-name=experiment-full(100/EN/2.7B)
+#SBATCH --job-name=experiment-tokenization{100}
 #SBATCH --mem=8000
 #SBATCH --gpus-per-node=a100:1
 
@@ -13,6 +13,6 @@ module load Boost/1.79.0-GCC-11.3.0
 
 source $HOME/thesis-llm-privacy/.env/bin/activate
 
-python ./trainer.py --config_file exp-configs/EMEA/100/config-2.7B-en.json
+python ./tokenize_data.py --config_file exp-configs/EMEA/100/config-125M-nl.json
 
 deactivate

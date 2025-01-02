@@ -110,8 +110,8 @@ def calculate_likelihoods(loss_per_token_2d, attention_masks_2d):
     for i,sentence_logits in enumerate(loss_per_token_2d):
         sentence_mask = attention_masks_2d[i].bool()
         non_padded_losses = sentence_logits[sentence_mask]
-        likelihoods.append(torch.mean(non_padded_losses))
-    return likelihoods
+        likelihoods.append(torch.mean(non_padded_losses).item())
+    return torch.stack(likelihoods)
 
 # Input: Takes in a list of prompt batches with uniform size, where every batch in the list has a field "attention_mask" and a 
 # field "input_ids", which are lists of tokenized sentences/their attention masks.
@@ -130,11 +130,8 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
         for i, off in enumerate(range(0, len(input_ids), batch_size)):
             # Get the data for the current batch, and realign it
             prompt_batch = input_ids[off:off+batch_size]
-            attention_masks_batch = attention_masks[off:off+batch_size]
-            # TODO: Prompt batch would be a tensor, can we call np.stack on a tensor (same for attention masks)?
-            prompt_batch = np.stack(prompt_batch, axis=0)
-            attention_masks_batch = np.stack(attention_masks_batch, axis=0)
             input_ids_batch = torch.tensor(prompt_batch, dtype=torch.int64).to(DEFAULT_DEVICE)
+            attention_masks_batch = attention_masks[off:off+batch_size]
 
             with torch.no_grad():
                 # Pass through the model to obtain the logits
@@ -149,7 +146,7 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
                 )
                 # Reshape to get an array of shape (batch_size, sequence_length-1) (so every row represents one prompt)
                 # Then calculate the likelihood for each row (sentence), and append the resulting array to batch_losses
-                batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1))))
+                batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1)), attention_masks_batch[:, 1:]))
         # concatenate all the loss scores for this batch of prompts of equal length, and append it to the list of losses per prompt batch
         losses.append(batch_losses)
     return losses
@@ -164,8 +161,8 @@ def mia_comp(prompts, batch_size: int):
     losses_trained = compute_losses_per_batch(MODEL, prompts, batch_size)
     losses_untrained = compute_losses_per_batch(MODEL_UNTRAINED, prompts, batch_size)
     # Make the losses in every batch a numpy array to calculate the perplexity
-    losses_trained_npy = [loss.numpy() for loss in losses_trained]
-    losses_untrained_npy = [loss.numpy() for loss in losses_untrained]
+    losses_trained_npy = [np.array(losses) for losses in losses_trained]
+    losses_untrained_npy = [np.array(losses) for losses in losses_untrained]
     # Both trained and untrained have the same amount of batches, and the same amount of losses in every batch. 
     # Hence, we can simply calculate the ratio of their perplexity
     perplexity_ratio = [np.exp(losses_trained_npy[i] - losses_untrained_npy[i]) for i in range(len(losses_trained_npy))]
@@ -184,14 +181,17 @@ def main():
     source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     os.makedirs(experiment_base, exist_ok=True)
     # Get the prompts
-    prompts = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
-    if not BATCHING:
-        prompts = [prompts]
+    if BATCHING:
+        prompts = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
+    else:
+        prompts = [torch.load(os.path.join(source_dir, "train-nb-" + LANGUAGE + ".pt"))]
     # Do the membership inference attack and save the results
     mia_results = mia_comp(prompts, BATCH_SIZE)
-    if not BATCHING:
+    if BATCHING:
+        torch.save(mia_results, os.path.join(experiment_base, "mia.pt"))    
+    else:
         mia_results = mia_results[0]
-    torch.save(mia_results, os.path.join(experiment_base, "mia.pt"))    
+        torch.save(mia_results, os.path.join(experiment_base, "mia-nb.pt"))   
 
 if __name__ == "__main__":
     main()

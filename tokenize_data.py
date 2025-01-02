@@ -79,11 +79,11 @@ def main():
         if os.path.exists(train_out_file) and os.path.exists(val_out_file):
             print("Files already exist. Skipping computation.")
             return
-        # Create the train and eval datasets using the indices
-        train_dataset_map = {train_indices[i]: train_data[i] for i in range(len(train_indices))}
         # Tokenize the datasets
         if BATCHING:
             logger.info("===== Tokenizing training data in batches =====")
+            # Create mapping from ids to strings for training dataset
+            train_dataset_map = {train_indices[i]: train_data[i] for i in range(len(train_indices))}
             tokenized_train_dataset = tokenize_prompts_in_batches(tokenizer, train_dataset_map)
         else:
             logger.info("===== Tokenizing training data without batches =====")
@@ -91,9 +91,10 @@ def main():
             tokenized_train_dataset = tokenizer(train_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
         tokenized_eval_sentences = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
 
-        # Save train and eval datasets to files
+        # Save the tokenized train and eval datasets to files
         torch.save(tokenized_train_dataset, train_out_file)
         torch.save(tokenized_eval_sentences, val_out_file)
+    logger.info("===== Tokenization done! =====")
 
 if __name__ == "__main__":
     main()
