@@ -137,7 +137,7 @@ default_args = {
     "log_level": "error",
     "report_to": "none",
     "per_device_train_batch_size": 8,
-    #"learning_rate": 1e-04,
+    "learning_rate": 1e-04,
     "gradient_accumulation_steps": 4,
     "gradient_checkpointing": True,
     "fp16": True,
