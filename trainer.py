@@ -149,7 +149,11 @@ if args.epochs:
 
 # Load the training and validation sets
 source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
-train = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
+if BATCHING:
+    train = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
+else:
+    train = torch.load(os.path.join(source_dir, "train-nb-" + LANGUAGE + ".pt"))
+    train = [train]
 val = torch.load(os.path.join(source_dir, "validation-" + LANGUAGE + ".pt"))
 
 print("Number of validation sentences:", len(val["input_ids"]))

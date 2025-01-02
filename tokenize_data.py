@@ -51,30 +51,28 @@ with open(args.config_file, "r") as f:
 languages = ["en","nl"]
 
 # Set up tokenizer
-tokenizer = initTokenizer()
+tokenizer = initTokenizer(MODEL_NAME)
 pad_token_id = tokenizer.pad_token_id
 
 def main():
-    logger.info(
-        "===== Starting dataset token generation in batches for language %s =====",
-        LANGUAGE,
-    )
+    logger.info("===== Starting dataset token generation =====")
     dir = get_data_directory(DATASET_DIR, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     # read the train indices
-    with open(os.path.join(dir, "split_indices.json"), "w") as f:
+    with open(os.path.join(dir, "split_indices.json"), "r") as f:
         train_indices = json.load(f)["train"]
     
-    logger.info("Splitting datasets into train and validation sets...")
     for lang in languages:
         logger.info(f"Processing language: {lang}")
         # Read the training and validation data for the language
-        with open(os.path.join(dir, "train-" + lang + ".txt"), "w") as f:
+        with open(os.path.join(dir, "train-" + lang + ".txt"), "r") as f:
             train_data = f.readlines()
-        with open(os.path.join(dir, "validation-" + lang + ".txt"), "w") as f:
+        with open(os.path.join(dir, "validation-" + lang + ".txt"), "r") as f:
             val_data = f.readlines()
         # Get the directory paths for the output
         source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, lang, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
         train_out_file = os.path.join(source_dir, "train-" + lang + ".pt")
+        if not BATCHING:
+            train_out_file = os.path.join(source_dir, "train-nb-" + lang + ".pt")
         val_out_file = os.path.join(source_dir, "validation-" + lang + ".pt")
 
         # Check if the files already exist
@@ -85,10 +83,12 @@ def main():
         train_dataset_map = {train_indices[i]: train_data[i] for i in range(len(train_indices))}
         # Tokenize the datasets
         if BATCHING:
+            logger.info("===== Tokenizing training data in batches =====")
             tokenized_train_dataset = tokenize_prompts_in_batches(tokenizer, train_dataset_map)
         else:
+            logger.info("===== Tokenizing training data without batches =====")
             # this call pads to the longest sequence in the dataset, and truncates to max_length
-            tokenized_train_dataset = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
+            tokenized_train_dataset = tokenizer(train_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
         tokenized_eval_sentences = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
 
         # Save train and eval datasets to files
