@@ -88,6 +88,9 @@ try:
     logger.info("Model loaded successfully.")
     logger.info("Loading untrained model...")
     MODEL_UNTRAINED = AutoModelForCausalLM.from_pretrained(HGmodel, low_cpu_mem_usage=True, cache_dir=cache_dir)
+    # The model has to account for the padding token which was introduced, for the trained model this was done in the trainer
+    MODEL_UNTRAINED.resize_token_embeddings(len(tokenizer))
+    MODEL_UNTRAINED.config.pad_token_id = tokenizer.pad_token_id
     # move model to GPU
     MODEL_UNTRAINED.to(DEFAULT_DEVICE)
     logger.info("Model loaded successfully.")

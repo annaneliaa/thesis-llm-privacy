@@ -100,6 +100,7 @@ model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(
     DEFAULT_DEVICE
 )
 model.resize_token_embeddings(len(tokenizer))
+model.config.pad_token_id = tokenizer.pad_token_id
 
 print("Model max length:", tokenizer.model_max_length)
 
