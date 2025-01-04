@@ -8,8 +8,6 @@ import json
 import argparse
 from transformers import AutoModelForCausalLM
 from util_lib import *
-from experiment_lib import *
-from data_lib import tokenize_prompts_in_batches
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -111,14 +109,15 @@ def calculate_likelihoods(loss_per_token_2d, attention_masks_2d):
         sentence_mask = attention_masks_2d[i].bool()
         non_padded_losses = sentence_logits[sentence_mask]
         likelihoods.append(torch.mean(non_padded_losses).item())
-    return torch.stack(likelihoods)
+    return likelihoods
 
 # Input: Takes in a list of prompt batches with uniform size, where every batch in the list has a field "attention_mask" and a 
 # field "input_ids", which are lists of tokenized sentences/their attention masks.
 # Returns a list of prompt losses per batch (shape: (batch_amt, batch_prompt_amt))
 def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, batch_size: int):
     losses = []
-    for prompts in prompts_list:
+    for i, prompts in enumerate(prompts_list):
+        logger.info("Computing losses for batch %d", i)
         # will temporarily hold the losses for this batch of prompts
         batch_losses = []
         # seperate attention masks and input ids. They are both 2d tensors.
@@ -127,7 +126,8 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
 
         generation_len = len(input_ids[0])
 
-        for i, off in enumerate(range(0, len(input_ids), batch_size)):
+        for j, off in enumerate(range(0, len(input_ids), batch_size)):
+            logger.info("%d/%d", j, (int)(len(input_ids)/batch_size))
             # Get the data for the current batch, and realign it
             prompt_batch = input_ids[off:off+batch_size]
             input_ids_batch = torch.tensor(prompt_batch, dtype=torch.int64).to(DEFAULT_DEVICE)
@@ -135,14 +135,14 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
 
             with torch.no_grad():
                 # Pass through the model to obtain the logits
-                outputs = model(input_ids_batch.to(DEFAULT_DEVICE), labels=input_ids_batch.to(DEFAULT_DEVICE))
+                outputs = model(input_ids_batch, labels=input_ids_batch)
                 # Store the logits (shape: (batch_size, sequence_length, vocab_size), sequence length is the length of each prompt)
                 logits = outputs.logits.cpu().detach()
                 # reshape logits into shape (batch_size * (sequence_length-1), vocab_size)
                 logits = logits[:, :-1].reshape((-1, logits.shape[-1])).float()
                 # calculate the loss per token by taking the cross_entropy, returned shape is (batch_size*(sequence_length-1))
                 loss_per_token = torch.nn.functional.cross_entropy(
-                    logits, input_ids_batch[:, 1:].flatten(), reduction="none"
+                    logits, input_ids_batch[:, 1:].to('cpu').detach().flatten(), reduction="none"
                 )
                 # Reshape to get an array of shape (batch_size, sequence_length-1) (so every row represents one prompt)
                 # Then calculate the likelihood for each row (sentence), and append the resulting array to batch_losses
@@ -157,10 +157,13 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
 # Output: A list of numpy dictionaries, where every dictionary corresponds to one batch in the input data, and contains the ratio of perplexity
 # between extraction on the trained and untrained model for every sentence in the batch, mapped to the sentence ids they correspond to.
 def mia_comp(prompts, batch_size: int):
-    # Compute the losses for the 
+    # Compute the losses for the
+    logger.info("Computing losses for trained model.")
     losses_trained = compute_losses_per_batch(MODEL, prompts, batch_size)
+    logger.info("Computing losses for untrained model.")
     losses_untrained = compute_losses_per_batch(MODEL_UNTRAINED, prompts, batch_size)
     # Make the losses in every batch a numpy array to calculate the perplexity
+    logger.info("Computing ratio of losses.")
     losses_trained_npy = [np.array(losses) for losses in losses_trained]
     losses_untrained_npy = [np.array(losses) for losses in losses_untrained]
     # Both trained and untrained have the same amount of batches, and the same amount of losses in every batch. 
@@ -177,7 +180,7 @@ def mia_comp(prompts, batch_size: int):
 def main():
     logger.info("====== Starting membership inference attack ======")
     # Get and create directories
-    experiment_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
+    experiment_base = get_result_directory(ROOT_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     os.makedirs(experiment_base, exist_ok=True)
     # Get the prompts
@@ -187,11 +190,13 @@ def main():
         prompts = [torch.load(os.path.join(source_dir, "train-nb-" + LANGUAGE + ".pt"))]
     # Do the membership inference attack and save the results
     mia_results = mia_comp(prompts, BATCH_SIZE)
+    logger.info("Saving results...")
     if BATCHING:
         torch.save(mia_results, os.path.join(experiment_base, "mia.pt"))    
     else:
         mia_results = mia_results[0]
-        torch.save(mia_results, os.path.join(experiment_base, "mia-nb.pt"))   
+        torch.save(mia_results, os.path.join(experiment_base, "mia-nb.pt"))  
+    logger.info("====== Membership inference attack done! ======")
 
 if __name__ == "__main__":
     main()

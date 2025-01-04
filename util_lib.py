@@ -74,8 +74,9 @@ def initTokenizer(model_name: str):
         tokenizer.add_special_tokens({"pad_token": "<|PAD|>"})
     return tokenizer
 
-def get_data_directory(dataset_dir, preprocessing: bool, normalization: bool, example_token_len = 0):
-    dir = os.path.join(dataset_dir)
+# helper function
+def get_path(preprocessing: bool, normalization: bool, example_token_len = 0):
+    dir = ""
     if (preprocessing):
         dir = os.path.join(dir, str(example_token_len))
     else:
@@ -84,18 +85,22 @@ def get_data_directory(dataset_dir, preprocessing: bool, normalization: bool, ex
         dir = os.path.join(dir, "normalized")
     else:
         dir = dir = os.path.join(dir, "natural")
+    return dir
+
+# gets the path to the correct repository that holds the initial datasets
+def get_data_directory(dataset_dir, preprocessing: bool, normalization: bool, example_token_len = 0):
+    dir = os.path.join(dataset_dir, get_path(preprocessing, normalization, example_token_len))
     os.makedirs(dir, exist_ok=True)
     return dir
 
+# gets the path to the correct repository that holds the tokenized datasets
 def get_source_directory(source_dir, dataset_dir, language, preprocessing: bool, normalization: bool, example_token_len = 0):
-    dir = os.path.join(source_dir, dataset_dir, language)
-    if (preprocessing):
-        dir = os.path.join(dir, str(example_token_len))
-    else:
-        dir = dir = os.path.join(dir, "raw")
-    if (normalization):
-        dir = os.path.join(dir, "normalized")
-    else:
-        dir = dir = os.path.join(dir, "natural")
+    dir = os.path.join(source_dir, dataset_dir, language, get_path(preprocessing, normalization, example_token_len))
+    os.makedirs(dir, exist_ok=True)
+    return dir
+
+# gets the path to the correct repository that holds the results
+def get_result_directory(root_dir, dataset_dir, language, preprocessing: bool, normalization: bool, example_token_len = 0):
+    dir = os.path.join(root_dir, dataset_dir, language, get_path(preprocessing, normalization, example_token_len))
     os.makedirs(dir, exist_ok=True)
     return dir
