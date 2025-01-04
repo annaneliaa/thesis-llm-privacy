@@ -86,6 +86,7 @@ def main():
         logger.info("===== Tokenizing training data without batches =====")
         # this call pads to the longest sequence in the dataset, and truncates to max_length
         tokenized_train_dataset = tokenizer(train_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
+        tokenized_train_dataset["sentence_ids"] = train_indices
     tokenized_eval_sentences = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
 
     # Save the tokenized train and eval datasets to files
