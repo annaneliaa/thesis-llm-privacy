@@ -13,6 +13,7 @@ module load Boost/1.79.0-GCC-11.3.0
 
 source $HOME/thesis-llm-privacy/.env/bin/activate
 
+python ./trainer.py --config_file exp-configs/EMEA/100/temp-nl.json
 python ./mia.py --config_file exp-configs/EMEA/100/temp-nl.json --model_dir /scratch/s5202841/finetuned/EMEA/nl-100-nat-125M-nb
 
 deactivate
