@@ -153,6 +153,7 @@ if BATCHING:
     train = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
 else:
     train = torch.load(os.path.join(source_dir, "train-nb-" + LANGUAGE + ".pt"))
+# if the input is not in batches, wrap the input. The training loop will simply run for one iteration
     train = [train]
 val = torch.load(os.path.join(source_dir, "validation-" + LANGUAGE + ".pt"))
 
@@ -162,9 +163,6 @@ print("Number of validation sentences:", len(val["input_ids"]))
 eval_dataset = SentencesDataset(
     val["input_ids"], val["attention_mask"]
 )
-# if the input is not in batches, wrap the input. The following loop will simply run for one iteration
-if not BATCHING:
-    train = [train]
 # initialize the trainer
 training_args = TrainingArguments(**default_args)
 trainer = Trainer(

@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --job-name=experiment-tokenization{100}
-#SBATCH --mem=8000
+#SBATCH --mem=16000
 #SBATCH --gpus-per-node=a100:1
 
 module purge

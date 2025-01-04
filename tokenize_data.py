@@ -48,8 +48,6 @@ with open(args.config_file, "r") as f:
     SEED
 ) = load_constants_from_config(config)
 
-languages = ["en","nl"]
-
 # Set up tokenizer
 tokenizer = initTokenizer(MODEL_NAME)
 pad_token_id = tokenizer.pad_token_id
