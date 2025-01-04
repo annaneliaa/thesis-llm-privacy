@@ -61,39 +61,38 @@ def main():
     with open(os.path.join(dir, "split_indices.json"), "r") as f:
         train_indices = json.load(f)["train"]
     
-    for lang in languages:
-        logger.info(f"Processing language: {lang}")
-        # Read the training and validation data for the language
-        with open(os.path.join(dir, "train-" + lang + ".txt"), "r") as f:
-            train_data = f.readlines()
-        with open(os.path.join(dir, "validation-" + lang + ".txt"), "r") as f:
-            val_data = f.readlines()
-        # Get the directory paths for the output
-        source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, lang, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
-        train_out_file = os.path.join(source_dir, "train-" + lang + ".pt")
-        if not BATCHING:
-            train_out_file = os.path.join(source_dir, "train-nb-" + lang + ".pt")
-        val_out_file = os.path.join(source_dir, "validation-" + lang + ".pt")
+    logger.info(f"Processing language: {LANGUAGE}")
+    # Read the training and validation data for the language
+    with open(os.path.join(dir, "train-" + LANGUAGE + ".txt"), "r") as f:
+        train_data = f.readlines()
+    with open(os.path.join(dir, "validation-" + LANGUAGE + ".txt"), "r") as f:
+        val_data = f.readlines()
+    # Get the directory paths for the output
+    source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
+    train_out_file = os.path.join(source_dir, "train-" + LANGUAGE + ".pt")
+    if not BATCHING:
+        train_out_file = os.path.join(source_dir, "train-nb-" + LANGUAGE + ".pt")
+    val_out_file = os.path.join(source_dir, "validation-" + LANGUAGE + ".pt")
 
-        # Check if the files already exist
-        if os.path.exists(train_out_file) and os.path.exists(val_out_file):
-            print("Files already exist. Skipping computation.")
-            return
-        # Tokenize the datasets
-        if BATCHING:
-            logger.info("===== Tokenizing training data in batches =====")
-            # Create mapping from ids to strings for training dataset
-            train_dataset_map = {train_indices[i]: train_data[i] for i in range(len(train_indices))}
-            tokenized_train_dataset = tokenize_prompts_in_batches(tokenizer, train_dataset_map)
-        else:
-            logger.info("===== Tokenizing training data without batches =====")
-            # this call pads to the longest sequence in the dataset, and truncates to max_length
-            tokenized_train_dataset = tokenizer(train_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
-        tokenized_eval_sentences = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
+    # Check if the files already exist
+    if os.path.exists(train_out_file) and os.path.exists(val_out_file):
+        print("Files already exist. Skipping computation.")
+        return
+    # Tokenize the datasets
+    if BATCHING:
+        logger.info("===== Tokenizing training data in batches =====")
+        # Create mapping from ids to strings for training dataset
+        train_dataset_map = {train_indices[i]: train_data[i] for i in range(len(train_indices))}
+        tokenized_train_dataset = tokenize_prompts_in_batches(tokenizer, train_dataset_map)
+    else:
+        logger.info("===== Tokenizing training data without batches =====")
+        # this call pads to the longest sequence in the dataset, and truncates to max_length
+        tokenized_train_dataset = tokenizer(train_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
+    tokenized_eval_sentences = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
 
-        # Save the tokenized train and eval datasets to files
-        torch.save(tokenized_train_dataset, train_out_file)
-        torch.save(tokenized_eval_sentences, val_out_file)
+    # Save the tokenized train and eval datasets to files
+    torch.save(tokenized_train_dataset, train_out_file)
+    torch.save(tokenized_eval_sentences, val_out_file)
     logger.info("===== Tokenization done! =====")
 
 if __name__ == "__main__":
