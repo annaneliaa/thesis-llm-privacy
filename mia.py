@@ -146,10 +146,11 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
                 # calculate the loss per token by taking the cross_entropy, returned shape is (batch_size*(sequence_length-1))
                 loss_per_token = torch.nn.functional.cross_entropy(
                     logits, input_ids_batch[:, 1:].to('cpu').detach().flatten(), reduction="none"
-                )
+                ).cpu()
                 # Reshape to get an array of shape (batch_size, sequence_length-1) (so every row represents one prompt)
                 # Then calculate the likelihood for each row (sentence), and append the resulting array to batch_losses
-                batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1)), attention_masks_batch[:, 1:]))
+            batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1)), attention_masks_batch[:, 1:]))
+            del outputs, logits, input_ids_batch
         # concatenate all the loss scores for this batch of prompts of equal length, and append it to the list of losses per prompt batch
         losses.append(batch_losses)
     return losses

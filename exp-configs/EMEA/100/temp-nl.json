@@ -6,7 +6,7 @@
     "experiment_name": "nl-100-nat-125M-nb",
     "preprocessing": true,
     "normalization": false,
-    "batching": true,
+    "batching": false,
     "num_trials": 100,
     "language": "nl",
     "split": "train",
