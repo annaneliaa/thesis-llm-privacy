@@ -174,17 +174,26 @@ def mia_comp(prompts, batch_size: int):
     # Hence, we can simply calculate the ratio of their perplexity
     perplexity_ratio = [np.exp(losses_trained_npy[i] - losses_untrained_npy[i]) for i in range(len(losses_trained_npy))]
     # remap the perplexity scores to the sentence ids
-    dict_ratio = [
-        {prompts[batch_nr]["sentence_ids"][i]: perplexity_ratio[batch_nr][i] for i in range(len(perplexity_ratio[batch_nr]))}
-          for batch_nr in range(len(perplexity_ratio))
-        ]
+    # in the case that the data is somehow misconfigured, we save the perplexity ratio
+    dict_ratio = []
+    for batch_nr in range(len(perplexity_ratio)):
+        try:
+            dict_ratio.append({
+                prompts[batch_nr]["sentence_ids"][i]: perplexity_ratio[batch_nr][i] for i in range(len(perplexity_ratio[batch_nr]))
+                })
+        except IndexError as e:
+            print("Indexing error in batch {batch_nr}! This indicates that something has gone wrong in the ordering of data.")
+            print(f"len(sentence_ids): {len(prompts[batch_nr]['sentence_ids'])}, len(perplexity_ratio[{batch_nr}]): {len(perplexity_ratio[batch_nr])}")
+            print("Saving the perplexity ratio")
+            torch.save(perplexity_ratio, os.path.join(get_mia_result_dir(ROOT_DIR, DATASET_DIR) + EXPERIMENT_NAME + "-ratio.pt"))
+            raise e
     return dict_ratio
     
     
 def main():
     logger.info("====== Starting membership inference attack ======")
     # Get and create directories
-    experiment_base = get_result_directory(ROOT_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
+    experiment_base = get_mia_result_dir(ROOT_DIR, DATASET_DIR)
     source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     os.makedirs(experiment_base, exist_ok=True)
     # Get the prompts
@@ -196,10 +205,10 @@ def main():
     mia_results = mia_comp(prompts, BATCH_SIZE)
     logger.info("Saving results...")
     if BATCHING:
-        torch.save(mia_results, os.path.join(experiment_base, "mia.pt"))    
+        torch.save(mia_results, os.path.join(experiment_base + EXPERIMENT_NAME + ".pt"))    
     else:
         mia_results = mia_results[0]
-        torch.save(mia_results, os.path.join(experiment_base, "mia-nb.pt"))  
+        torch.save(mia_results, os.path.join(experiment_base + EXPERIMENT_NAME + "-nb.pt"))  
     logger.info("====== Membership inference attack done! ======")
 
 if __name__ == "__main__":
