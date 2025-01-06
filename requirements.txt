@@ -6,3 +6,4 @@ transformers
 transformers[torch]
 matplotlib
 pynvml
+scipy

@@ -83,8 +83,6 @@ def main():
 
     # this is where temporarily created csv files are stored
     csv_output_file_pattern = os.path.join(SOURCE_DIR, DATASET_DIR, "csv", str(EXAMPLE_TOKEN_LEN))
-    output_file_pattern = os.path.join(output_file_pattern, "normalized")
-
     # Count the number of tokens in each sentence for both datasets
     # Count the number of sentences that are at least the desired token length
     # Filtering csv files on the basis of token length

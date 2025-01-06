@@ -5,6 +5,8 @@ import logging
 from IPython.display import display
 from transformers import AutoTokenizer
 
+cache_dir = "/scratch/s5202841"
+
 class JupyterHandler(logging.Handler):
     def emit(self, record):
         display(self.format(record))
@@ -89,18 +91,18 @@ def get_path(preprocessing: bool, normalization: bool, example_token_len = 0):
 
 # gets the path to the correct repository that holds the initial datasets
 def get_data_directory(dataset_dir, preprocessing: bool, normalization: bool, example_token_len = 0):
-    dir = os.path.join(dataset_dir, get_path(preprocessing, normalization, example_token_len))
+    dir = os.path.join(cache_dir, dataset_dir, get_path(preprocessing, normalization, example_token_len))
     os.makedirs(dir, exist_ok=True)
     return dir
 
 # gets the path to the correct repository that holds the tokenized datasets
 def get_source_directory(source_dir, dataset_dir, language, preprocessing: bool, normalization: bool, example_token_len = 0):
-    dir = os.path.join(source_dir, dataset_dir, language, get_path(preprocessing, normalization, example_token_len))
+    dir = os.path.join(cache_dir, source_dir, dataset_dir, language, get_path(preprocessing, normalization, example_token_len))
     os.makedirs(dir, exist_ok=True)
     return dir
 
 # gets the path to the correct repository that holds the results
 def get_mia_result_directory(root_dir, dataset_dir, experiment_name):
-    dir = os.path.join(root_dir, dataset_dir, "mia", experiment_name)
+    dir = os.path.join(cache_dir, root_dir, dataset_dir, "mia", experiment_name)
     os.makedirs(dir, exist_ok=True)
     return dir
