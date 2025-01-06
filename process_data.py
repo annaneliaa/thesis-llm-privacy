@@ -61,7 +61,7 @@ def main():
     # We balance the English and Dutch datasets by only keeping sentences that are at least the desired token length in both languages, and also exist in both sets
     # Output: A JSONL version of both datasets, aligned such that the set of example IDs is the same for both languages
 
-    logger.info("==== Sarting data processing script ====")
+    logger.info("==== Starting data processing script ====")
     logger.info("This may take a while depending on the size of the dataset...")
     # dataset_base has the file path of the dataset minus the ending that indicates the language
     dataset_base = os.path.join(DATASET_DIR, DATASET_NAME)

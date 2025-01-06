@@ -119,10 +119,14 @@ def main():
     losses_untrained = torch.load(os.path.join(res_dir, "losses_untrained.pt"))
     write_stats(losses_untrained, os.path.join(res_dir, "losses_untrained_stats.text"))
     # analyze the results of the mia
-    results = torch.load(os.path.join(res_dir, "mia.pt"))
-    results = convert_to_dict(results)
-    sentence_lengths = [len(tokenizer.encode(dataset[key])) for key in results.keys()]
+    results_list = torch.load(os.path.join(res_dir, "mia.pt"))
+    results = convert_to_dict(results_list)
+    sentence_lengths = [min(len(tokenizer.encode(dataset[key])), 512) for key in results.keys()]
     evaluate_results(results.values(), sentence_lengths, res_dir)
+    # analyze for each batch individually
+    prev = 0
+    for i, result in enumerate(results_list):
+        evaluate_results(result.values(), sentence_lengths[prev:prev+len(result.values)], os.path.join(res_dir, "batch_" + i))
     logger.info("===== Done! =====")
 
 if __name__ == "__main__":
