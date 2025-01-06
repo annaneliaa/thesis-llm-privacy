@@ -58,7 +58,7 @@ if args.model_dir:
     # Path to finetuned model is provided
     MODEL_NAME = args.model_dir
     logger.info(f"Model directory provided: {MODEL_NAME}")
-    logger.info("Executing extraction on finetuned model.")
+    logger.info("Executing membership inference attack on finetuned model.")
 else:
     logger.info("Model directory not provided, using default model specified in config.")
 
@@ -150,6 +150,7 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
                 # Reshape to get an array of shape (batch_size, sequence_length-1) (so every row represents one prompt)
                 # Then calculate the likelihood for each row (sentence), and append the resulting array to batch_losses
             batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1)), attention_masks_batch[:, 1:]))
+            # this is to not run out of gpu memory
             del outputs, logits, input_ids_batch
         # concatenate all the loss scores for this batch of prompts of equal length, and append it to the list of losses per prompt batch
         losses.append(batch_losses)
@@ -160,7 +161,7 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
 # and untrained instance (HGModel, specified in config)
 # Output: A list of numpy dictionaries, where every dictionary corresponds to one batch in the input data, and contains the ratio of perplexity
 # between extraction on the trained and untrained model for every sentence in the batch, mapped to the sentence ids they correspond to.
-def mia_comp(prompts, batch_size: int):
+def mia_comp(prompts: list, batch_size: int, dir: str):
     # Compute the losses for the
     logger.info("Computing losses for trained model.")
     losses_trained = compute_losses_per_batch(MODEL, prompts, batch_size)
@@ -172,7 +173,7 @@ def mia_comp(prompts, batch_size: int):
     losses_untrained_npy = [np.array(losses) for losses in losses_untrained]
     # Both trained and untrained have the same amount of batches, and the same amount of losses in every batch. 
     # Hence, we can simply calculate the ratio of their perplexity
-    perplexity_ratio = [np.exp(losses_trained_npy[i] - losses_untrained_npy[i]) for i in range(len(losses_trained_npy))]
+    perplexity_ratio = [np.exp(losses_untrained_npy[i] - losses_trained_npy[i]) for i in range(len(losses_trained_npy))]
     # remap the perplexity scores to the sentence ids
     # in the case that the data is somehow misconfigured, we save the perplexity ratio
     dict_ratio = []
@@ -185,30 +186,33 @@ def mia_comp(prompts, batch_size: int):
             print("Indexing error in batch {batch_nr}! This indicates that something has gone wrong in the ordering of data.")
             print(f"len(sentence_ids): {len(prompts[batch_nr]['sentence_ids'])}, len(perplexity_ratio[{batch_nr}]): {len(perplexity_ratio[batch_nr])}")
             print("Saving the perplexity ratio")
-            torch.save(perplexity_ratio, os.path.join(get_mia_result_dir(ROOT_DIR, DATASET_DIR) + EXPERIMENT_NAME + "-ratio.pt"))
+            torch.save(perplexity_ratio, os.path.join(get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME), "-ratio.pt"))
             raise e
-    return dict_ratio
+    return dict_ratio, losses_trained_npy, losses_untrained_npy
     
     
 def main():
     logger.info("====== Starting membership inference attack ======")
     # Get and create directories
-    experiment_base = get_mia_result_dir(ROOT_DIR, DATASET_DIR)
+    result_dir = get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
     source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
-    os.makedirs(experiment_base, exist_ok=True)
+    os.makedirs(result_dir, exist_ok=True)
     # Get the prompts
     if BATCHING:
         prompts = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
     else:
         prompts = [torch.load(os.path.join(source_dir, "train-nb-" + LANGUAGE + ".pt"))]
     # Do the membership inference attack and save the results
-    mia_results = mia_comp(prompts, BATCH_SIZE)
+    mia_results, losses_trained, losses_untrained = mia_comp(prompts, BATCH_SIZE)
     logger.info("Saving results...")
+    # Save the losses for potential analysis later on
+    torch.save(losses_trained, os.path.join(result_dir, "losses_trained.pt"))
+    torch.save((losses_untrained, os.path.join(result_dir, "losses_untrained.pt")))
     if BATCHING:
-        torch.save(mia_results, os.path.join(experiment_base + EXPERIMENT_NAME + ".pt"))    
+        torch.save(mia_results, os.path.join(result_dir, "mia.pt"))    
     else:
         mia_results = mia_results[0]
-        torch.save(mia_results, os.path.join(experiment_base + EXPERIMENT_NAME + "-nb.pt"))  
+        torch.save(mia_results, os.path.join(result_dir, "mia-nb.pt"))  
     logger.info("====== Membership inference attack done! ======")
 
 if __name__ == "__main__":

@@ -13,6 +13,10 @@ module load Boost/1.79.0-GCC-11.3.0
 
 source $HOME/thesis-llm-privacy/.env/bin/activate
 
+python ./preprocessing.py --config_file exp-configs/EMEA/raw/config-125M-nl.json
+python ./process_data.py --config_file exp-configs/EMEA/raw/config-125M-nl.json
+python ./split_train_val.py --config_file exp-configs/EMEA/raw/config-125M-nl.json
 python ./tokenize_data.py --config_file exp-configs/EMEA/raw/config-125M-nl.json
+python ./tokenize_data.py --config_file exp-configs/EMEA/raw/config-125M-en.json
 
 deactivate

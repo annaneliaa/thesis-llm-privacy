@@ -15,5 +15,6 @@ source $HOME/thesis-llm-privacy/.env/bin/activate
 
 python ./trainer.py --config_file exp-configs/EMEA/raw/config-6B-en.json --epochs 1
 python ./mia.py --config_file exp-configs/EMEA/raw/config-6B-en.json --model_dir /scratch/s5202841/finetuned/EMEA/en-raw-nat-6B
+python ./mia_evaluation.py --config_file exp-configs/EMEA/raw/config-6B-en.json
 
 deactivate

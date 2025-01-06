@@ -100,7 +100,7 @@ def get_source_directory(source_dir, dataset_dir, language, preprocessing: bool,
     return dir
 
 # gets the path to the correct repository that holds the results
-def get_mia_result_dir(root_dir, dataset_dir):
-    dir = os.path.join(root_dir, dataset_dir, "mia")
+def get_mia_result_directory(root_dir, dataset_dir, experiment_name):
+    dir = os.path.join(root_dir, dataset_dir, "mia", experiment_name)
     os.makedirs(dir, exist_ok=True)
     return dir

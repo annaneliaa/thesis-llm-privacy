@@ -138,6 +138,7 @@ default_args = {
     "log_level": "error",
     "report_to": "none",
     "per_device_train_batch_size": 8,
+    "per_device_eval_batch_size": 8,
     "learning_rate": 1e-04,
     "gradient_accumulation_steps": 4,
     "gradient_checkpointing": True,
@@ -183,7 +184,10 @@ for i,tokenized_sentences in enumerate(train):
     print_summary(result)
 
 logger.info("Training finished.")
-
+eval_results = Trainer.evaluate()
+print("Evaluation Results:")
+for key, value in eval_results.items():
+    print(f"{key}: {value}")
 
 logger.info("Saving model to %s", output_dir)
 # Save model and tokenizer
