@@ -184,7 +184,7 @@ for i,tokenized_sentences in enumerate(train):
     print_summary(result)
 
 logger.info("Training finished.")
-eval_results = Trainer.evaluate()
+eval_results = trainer.evaluate()
 print("Evaluation Results:")
 for key, value in eval_results.items():
     print(f"{key}: {value}")

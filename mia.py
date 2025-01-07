@@ -161,7 +161,7 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
 # and untrained instance (HGModel, specified in config)
 # Output: A list of numpy dictionaries, where every dictionary corresponds to one batch in the input data, and contains the ratio of perplexity
 # between extraction on the trained and untrained model for every sentence in the batch, mapped to the sentence ids they correspond to.
-def mia_comp(prompts: list, batch_size: int, dir: str):
+def mia_comp(prompts: list, batch_size: int):
     # Compute the losses for the
     logger.info("Computing losses for trained model.")
     losses_trained = compute_losses_per_batch(MODEL, prompts, batch_size)
@@ -207,7 +207,7 @@ def main():
     logger.info("Saving results...")
     # Save the losses for potential analysis later on
     torch.save(losses_trained, os.path.join(result_dir, "losses_trained.pt"))
-    torch.save((losses_untrained, os.path.join(result_dir, "losses_untrained.pt")))
+    torch.save(losses_untrained, os.path.join(result_dir, "losses_untrained.pt"))
     if BATCHING:
         torch.save(mia_results, os.path.join(result_dir, "mia.pt"))    
     else:

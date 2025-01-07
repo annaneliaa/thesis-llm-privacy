@@ -73,15 +73,8 @@ def write_stats(results: list, file: str):
         f.write(f"Standard deviation: {std}\n")
         f.write(f"25, 50 and 75 Percentiles: {p25} {p50} {p75}\n")
 
-def evaluate_results(results: list, sentence_lengths: list, dir: str):
+def evaluate_results(results: list, sentence_lengths: list, dir: str, plotting = True):
     # Make a scatter plot of the results based on the sentence_lengths
-    plt.figure(figsize=(8, 6))
-    plt.scatter(sentence_lengths, results, c='blue', s=10, alpha=0.7)
-    plt.xlabel("Setence length (tokenized)")
-    plt.ylabel("Loss ratio")
-    plt.title(f"Membership inference attack {EXPERIMENT_NAME}")
-    plt.grid()
-    plt.savefig(os.path.join(dir, "plot.png"), dpi = 300, bbox_inches = "tight")
     # Write all sorts of statistical data
     file = os.path.join(dir, "stats.txt")
     write_stats(results, file)
@@ -91,20 +84,38 @@ def evaluate_results(results: list, sentence_lengths: list, dir: str):
             increased_perplexity_amt += 1
     with open(file, "a") as f:
         f.write(f"Percentage of sentences with ratio greater than 1: {increased_perplexity_amt/len(results)}\n")
-    # Make a plot with only the lower 75 percentile, and with the upper 25 percentile
-    p75 = np.percentile(results, 75)
-    plt.ylim(bottom=p75)
-    plt.title(f"Membership inference attack {EXPERIMENT_NAME}: Results in the highest 25 percentile")
-    plt.savefig(os.path.join(dir, "plot_over_p75.png"), dpi = 300, bbox_inches = "tight")
-    plt.ylim(bottom = 0, top=p75)
-    plt.title(f"Membership inference attack {EXPERIMENT_NAME}: Results in the lower 75 percentile")
-    plt.savefig(os.path.join(dir, "plot_under_p75.png"), dpi = 300, bbox_inches = "tight")
     # Gather and write stats for all results that are above the 75 percentile
-    lengths_over_p75 = []
-    for i in range(len(results)):
-        if results[i] > p75:
-            lengths_over_p75.append(sentence_lengths[i])
-    write_stats(lengths_over_p75, os.path.join(dir, "stats_lengths_over_p75.txt"))
+    percentiles = [75,90]
+    for percentile in percentiles:
+        lengths_over_p = []
+        p = np.percentile(results, percentile)
+        for i in range(len(results)):
+            if results[i] > p:
+                lengths_over_p.append(sentence_lengths[i])
+        with open(file, "a") as f:
+            f.write(f"---- Stats for upper {100-percentile} percentile ----\n")
+        write_stats(lengths_over_p, file)
+
+    # If no plots are desired, simply return
+    if not plotting:
+        return
+    # Otherwise, make a scatter plot mapping the loss ratio to the sentence lengths
+    plt.figure(figsize=(8, 6))
+    plt.scatter(sentence_lengths, results, c='blue', s=10, alpha=0.7)
+    plt.xlabel("Sentence length (tokenized)")
+    plt.ylabel("Loss ratio")
+    plt.title(f"Membership inference attack {EXPERIMENT_NAME}")
+    plt.grid()
+    plt.savefig(os.path.join(dir, "plot.png"), dpi = 300, bbox_inches = "tight")
+    # Make a plot with only the lower 90 percentile, and with the upper 10 percentile
+    for percentile in percentiles:
+        p = np.percentile(results, percentile)
+        plt.ylim(bottom=p)
+        plt.title(f"Membership inference attack {EXPERIMENT_NAME}: Results in the highest {100-percentile} percentile")
+        plt.savefig(os.path.join(dir, "plot_over_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
+        plt.ylim(bottom = 0, top=p)
+        plt.title(f"Membership inference attack {EXPERIMENT_NAME}: Results in the lower {percentile} percentile")
+        plt.savefig(os.path.join(dir, f"plot_under_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
 
 
 def main():
@@ -123,10 +134,13 @@ def main():
     results = convert_to_dict(results_list)
     sentence_lengths = [min(len(tokenizer.encode(dataset[key])), 512) for key in results.keys()]
     evaluate_results(results.values(), sentence_lengths, res_dir)
-    # analyze for each batch individually
+    # analyze stats for each batch individually, no plotting done for every batch
     prev = 0
+    stats_file = os.path.join(res_dir, "stats.txt")
     for i, result in enumerate(results_list):
-        evaluate_results(result.values(), sentence_lengths[prev:prev+len(result.values)], os.path.join(res_dir, "batch_" + i))
+        with open(stats_file, "a") as f:
+            f.write(f"---- Stats for batch {i} ----\n")
+        evaluate_results(result.values(), sentence_lengths[prev:prev+len(result.values)], stats_file, False)
     logger.info("===== Done! =====")
 
 if __name__ == "__main__":
