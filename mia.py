@@ -152,6 +152,7 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, ba
             batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1)), attention_masks_batch[:, 1:]))
             # this is to not run out of gpu memory
             del outputs, logits, input_ids_batch
+            torch.cuda.empty_cache()
         # concatenate all the loss scores for this batch of prompts of equal length, and append it to the list of losses per prompt batch
         losses.append(batch_losses)
     return losses

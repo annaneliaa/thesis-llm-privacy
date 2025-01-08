@@ -126,9 +126,9 @@ def main():
     res_dir = get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
     # generate some stats for the losses obtained
     losses_trained = torch.load(os.path.join(res_dir, "losses_trained.pt"))
-    write_stats(losses_trained, os.path.join(res_dir, "losses_trained_stats.text"))
+    write_stats([item for batch in losses_trained for item in batch], os.path.join(res_dir, "losses_trained_stats.text"))
     losses_untrained = torch.load(os.path.join(res_dir, "losses_untrained.pt"))
-    write_stats(losses_untrained, os.path.join(res_dir, "losses_untrained_stats.text"))
+    write_stats([item for batch in losses_untrained for item in batch], os.path.join(res_dir, "losses_untrained_stats.text"))
     # analyze the results of the mia
     results_list = torch.load(os.path.join(res_dir, "mia.pt"))
     results = convert_to_dict(results_list)
@@ -140,7 +140,7 @@ def main():
     for i, result in enumerate(results_list):
         with open(stats_file, "a") as f:
             f.write(f"---- Stats for batch {i} ----\n")
-        evaluate_results(result.values(), sentence_lengths[prev:prev+len(result.values)], stats_file, False)
+        evaluate_results(result.values(), sentence_lengths[prev:prev+len(result.values())], stats_file, False)
     logger.info("===== Done! =====")
 
 if __name__ == "__main__":
