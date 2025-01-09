@@ -108,11 +108,12 @@ def evaluate_results(results: list, sentence_lengths: list, dir: str, plotting =
     plt.grid()
     plt.savefig(os.path.join(dir, "plot.png"), dpi = 300, bbox_inches = "tight")
     # Make a plot with only the lower 90 percentile, and with the upper 10 percentile
+    _, top_init = plt.ylim
     for percentile in percentiles:
         p = np.percentile(results, percentile)
-        plt.ylim(bottom=p)
+        plt.ylim(bottom=p, top = top_init)
         plt.title(f"Membership inference attack {EXPERIMENT_NAME}: Results in the highest {100-percentile} percentile")
-        plt.savefig(os.path.join(dir, "plot_over_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
+        plt.savefig(os.path.join(dir, f"plot_over_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
         plt.ylim(bottom = 0, top=p)
         plt.title(f"Membership inference attack {EXPERIMENT_NAME}: Results in the lower {percentile} percentile")
         plt.savefig(os.path.join(dir, f"plot_under_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
@@ -126,21 +127,22 @@ def main():
     res_dir = get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
     # generate some stats for the losses obtained
     losses_trained = torch.load(os.path.join(res_dir, "losses_trained.pt"))
-    write_stats([item for batch in losses_trained for item in batch], os.path.join(res_dir, "losses_trained_stats.text"))
+    write_stats([item for batch in losses_trained for item in batch], os.path.join(res_dir, "losses_trained_stats.txt"))
     losses_untrained = torch.load(os.path.join(res_dir, "losses_untrained.pt"))
-    write_stats([item for batch in losses_untrained for item in batch], os.path.join(res_dir, "losses_untrained_stats.text"))
+    write_stats([item for batch in losses_untrained for item in batch], os.path.join(res_dir, "losses_untrained_stats.txt"))
     # analyze the results of the mia
     results_list = torch.load(os.path.join(res_dir, "mia.pt"))
     results = convert_to_dict(results_list)
     sentence_lengths = [min(len(tokenizer.encode(dataset[key])), 512) for key in results.keys()]
-    evaluate_results(results.values(), sentence_lengths, res_dir)
+    evaluate_results(list(results.values()), sentence_lengths, res_dir)
     # analyze stats for each batch individually, no plotting done for every batch
-    prev = 0
     stats_file = os.path.join(res_dir, "stats.txt")
+    prev = 0
     for i, result in enumerate(results_list):
         with open(stats_file, "a") as f:
-            f.write(f"---- Stats for batch {i} ----\n")
-        evaluate_results(result.values(), sentence_lengths[prev:prev+len(result.values())], stats_file, False)
+            f.write(f"\n---- Stats for batch {i} ----\n")
+        evaluate_results(list(result.values()), sentence_lengths[prev:prev+len(result.values())], res_dir, False)
+        prev += len(result.values())
     logger.info("===== Done! =====")
 
 if __name__ == "__main__":
