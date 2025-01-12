@@ -8,6 +8,7 @@ import json
 import argparse
 from transformers import AutoModelForCausalLM
 from util_lib import *
+from experiment_lib import compute_losses_per_batch
 
 # Configure Python's logging in Jupyter notebook
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -102,76 +103,26 @@ logger.info("Experiment name: %s", EXPERIMENT_NAME)
 logger.info("Language: %s", LANGUAGE)
 logger.info("Model: %s", MODEL_NAME)
 
-# Calculates the likelihood for a list of losses, but only for non-padding tokens (as indicated by the attention masks)
-# Input: The list of lists of losses and their corresponding attention masks
-# Output: The list of likelihoods (1 per list of losses)
-def calculate_likelihoods(loss_per_token_2d, attention_masks_2d):
-    likelihoods = []
-    # filter out the losses of padding tokens by applyting the attention_masks. Then calculate the mean of the losses
-    for i,sentence_logits in enumerate(loss_per_token_2d):
-        sentence_mask = attention_masks_2d[i].bool()
-        non_padded_losses = sentence_logits[sentence_mask]
-        likelihoods.append(torch.mean(non_padded_losses).item())
-    return likelihoods
-
-# Input: Takes in a list of prompt batches with uniform size, where every batch in the list has a field "attention_mask" and a 
-# field "input_ids", which are lists of tokenized sentences/their attention masks.
-# Returns a list of prompt losses per batch (shape: (batch_amt, batch_prompt_amt))
-def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, batch_size: int):
-    losses = []
-    for i, prompts in enumerate(prompts_list):
-        logger.info("Computing losses for batch %d", i)
-        # will temporarily hold the losses for this batch of prompts
-        batch_losses = []
-        # seperate attention masks and input ids. They are both 2d tensors.
-        attention_masks = prompts["attention_mask"]
-        input_ids = prompts["input_ids"]
-
-        generation_len = len(input_ids[0])
-
-        for j, off in enumerate(range(0, len(input_ids), batch_size)):
-            logger.info("%d/%d", j, (int)(len(input_ids)/batch_size))
-            # Get the data for the current batch, and realign it
-            prompt_batch = input_ids[off:off+batch_size]
-            input_ids_batch = torch.tensor(prompt_batch, dtype=torch.int64).to(DEFAULT_DEVICE)
-            attention_masks_batch = attention_masks[off:off+batch_size]
-
-            with torch.no_grad():
-                # Pass through the model to obtain the logits
-                outputs = model(input_ids_batch, labels=input_ids_batch)
-                # Store the logits (shape: (batch_size, sequence_length, vocab_size), sequence length is the length of each prompt)
-                logits = outputs.logits.cpu().detach()
-                # reshape logits into shape (batch_size * (sequence_length-1), vocab_size)
-                logits = logits[:, :-1].reshape((-1, logits.shape[-1])).float()
-                # calculate the loss per token by taking the cross_entropy, returned shape is (batch_size*(sequence_length-1))
-                loss_per_token = torch.nn.functional.cross_entropy(
-                    logits, input_ids_batch[:, 1:].to('cpu').detach().flatten(), reduction="none"
-                ).cpu()
-                # Reshape to get an array of shape (batch_size, sequence_length-1) (so every row represents one prompt)
-                # Then calculate the likelihood for each row (sentence), and append the resulting array to batch_losses
-            batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1)), attention_masks_batch[:, 1:]))
-            # this is to not run out of gpu memory
-            del outputs, logits, input_ids_batch
-            torch.cuda.empty_cache()
-        # concatenate all the loss scores for this batch of prompts of equal length, and append it to the list of losses per prompt batch
-        losses.append(batch_losses)
-    return losses
-
-
 # Executes a membership inference attack with the passed prompts by comparing the perplexity of two models, in this case a trained (MODEL_NAME, specified in flag),
 # and untrained instance (HGModel, specified in config)
 # Output: A list of numpy dictionaries, where every dictionary corresponds to one batch in the input data, and contains the ratio of perplexity
 # between extraction on the trained and untrained model for every sentence in the batch, mapped to the sentence ids they correspond to.
 def mia_comp(prompts: list, batch_size: int):
-    # Compute the losses for the
+    # Compute the losses for the trained model
     logger.info("Computing losses for trained model.")
-    losses_trained = compute_losses_per_batch(MODEL, prompts, batch_size)
-    logger.info("Computing losses for untrained model.")
-    losses_untrained = compute_losses_per_batch(MODEL_UNTRAINED, prompts, batch_size)
-    # Make the losses in every batch a numpy array to calculate the perplexity
-    logger.info("Computing ratio of losses.")
+    losses_trained = compute_losses_per_batch(MODEL, prompts, DEFAULT_DEVICE, batch_size)
     losses_trained_npy = [np.array(losses) for losses in losses_trained]
-    losses_untrained_npy = [np.array(losses) for losses in losses_untrained]
+    # This is a small optimization: If the losses have been calculated for another experiment, then we simply load them.
+    # The assumption here is that the first experiment is run with one epoch of training, s.t. the experiment name does not have the appendix -ex where x is the number of epochs of training.
+    path_untrained = os.path.join(get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)[:-3], "losses_untrained.pt")
+    if not os.path.exists(path_untrained):
+        logger.info("Computing losses for untrained model.")
+        losses_untrained = compute_losses_per_batch(MODEL_UNTRAINED, prompts, DEFAULT_DEVICE, batch_size)
+        losses_untrained_npy = [np.array(losses) for losses in losses_untrained]
+    else:
+        logger.info("Losses for untrained model already calculated. Loading losses...")
+        losses_untrained_npy = torch.load(path_untrained)
+    logger.info("Computing ratio of losses.")
     # Both trained and untrained have the same amount of batches, and the same amount of losses in every batch. 
     # Hence, we can simply calculate the ratio of their perplexity
     perplexity_ratio = [np.exp(losses_untrained_npy[i] - losses_trained_npy[i]) for i in range(len(losses_trained_npy))]

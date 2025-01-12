@@ -96,7 +96,7 @@ logger.info("Experiment name %s", EXPERIMENT_NAME)
 
 tokenizer = initTokenizer(MODEL_NAME)
 logger.info("Loading model...")
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, cache_dir=HF_CACHE_DIR).to(
     DEFAULT_DEVICE
 )
 model.resize_token_embeddings(len(tokenizer))

@@ -68,7 +68,7 @@ def load_constants_from_config(config):
 def initTokenizer(model_name: str):
     print("Loading tokenizer...")
     try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
     except Exception as e:
         print(f"Error loading tokenizer: {e}")
         raise e
@@ -104,5 +104,11 @@ def get_source_directory(source_dir, dataset_dir, language, preprocessing: bool,
 # gets the path to the correct repository that holds the results
 def get_mia_result_directory(root_dir, dataset_dir, experiment_name):
     dir = os.path.join(cache_dir, root_dir, dataset_dir, "mia", experiment_name)
+    os.makedirs(dir, exist_ok=True)
+    return dir
+
+# gets the path to the correct repository that holds the results
+def get_canary_result_directory(root_dir, dataset_dir, experiment_name):
+    dir = os.path.join(cache_dir, root_dir, dataset_dir, "canary", experiment_name)
     os.makedirs(dir, exist_ok=True)
     return dir

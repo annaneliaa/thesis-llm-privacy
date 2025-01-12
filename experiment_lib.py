@@ -6,6 +6,7 @@ import csv
 import os
 import torch
 from torch.utils.data import random_split
+from transformers import AutoModelForCausalLM
 
 def is_file_empty(file_path):
     return os.path.getsize(file_path) == 0
@@ -204,3 +205,62 @@ def calculate_perplexity(losses: dict):
         perplexities.append({'trial': trial['trial'], 'perplexity': perplexity})
     
     return perplexities
+
+# Calculates the likelihood for a list of losses, but only for non-padding tokens (as indicated by the attention masks)
+# Input: The list of lists of losses and their corresponding attention masks
+# Output: The list of likelihoods (1 per list of losses)
+def calculate_likelihoods(loss_per_token_2d, attention_masks_2d):
+    likelihoods = []
+    # filter out the losses of padding tokens by applyting the attention_masks. Then calculate the mean of the losses
+    for i,sentence_logits in enumerate(loss_per_token_2d):
+        sentence_mask = attention_masks_2d[i].bool()
+        non_padded_losses = sentence_logits[sentence_mask]
+        likelihoods.append(torch.mean(non_padded_losses).item())
+    return likelihoods
+
+# Input: Takes in a list of prompt batches with uniform size, where every batch in the list has a field "attention_mask" and a 
+# field "input_ids", which are lists of tokenized sentences/their attention masks.
+# Returns a list of prompt losses per batch (shape: (batch_amt, batch_prompt_amt))
+def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, default_device: str, batch_size: int, suffix_len = -1) -> list:
+    losses = []
+    for i, prompts in enumerate(prompts_list):
+        print(f"Computing losses for batch {i}")
+        # will temporarily hold the losses for this batch of prompts
+        batch_losses = []
+        # seperate attention masks and input ids. They are both 2d tensors.
+        attention_masks = prompts["attention_mask"]
+        input_ids = prompts["input_ids"]
+
+        generation_len = len(input_ids[0])
+        if suffix_len == -1:
+            suffix_idx = 0
+        else:
+            suffix_idx = generation_len - suffix_len
+
+        for j, off in enumerate(range(0, len(input_ids), batch_size)):
+            print(f"{j}/{(int)(len(input_ids)/batch_size)}")
+            # Get the data for the current batch, and realign it
+            prompt_batch = input_ids[off:off+batch_size]
+            input_ids_batch = torch.tensor(prompt_batch, dtype=torch.int64).to(default_device)
+            attention_masks_batch = attention_masks[off:off+batch_size]
+
+            with torch.no_grad():
+                # Pass through the model to obtain the logits
+                outputs = model(input_ids_batch, labels=input_ids_batch)
+                # Store the logits (shape: (batch_size, sequence_length, vocab_size), sequence length is the length of each prompt)
+                logits = outputs.logits.cpu().detach()
+                # reshape logits into shape (batch_size * (sequence_length-1), vocab_size)
+                logits = logits[:, :-1].reshape((-1, logits.shape[-1])).float()
+                # calculate the loss per token by taking the cross_entropy, returned shape is (batch_size*(sequence_length-1))
+                loss_per_token = torch.nn.functional.cross_entropy(
+                    logits, input_ids_batch[:, 1:].to('cpu').detach().flatten(), reduction="none"
+                ).cpu()
+                # Reshape to get an array of shape (batch_size, sequence_length-1) (so every row represents one prompt)
+                # Then calculate the likelihood for each row (sentence), and append the resulting array to batch_losses
+            batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1))[:, suffix_idx:], attention_masks_batch[:, 1:]))
+            # this is to not run out of gpu memory
+            del outputs, logits, input_ids_batch
+            torch.cuda.empty_cache()
+        # concatenate all the loss scores for this batch of prompts of equal length, and append it to the list of losses per prompt batch
+        losses.append(batch_losses)
+    return losses
