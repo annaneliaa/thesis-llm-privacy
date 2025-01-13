@@ -29,6 +29,7 @@ parser.add_argument(
     "--config_file", type=str, required=True, help="Path to the configuration file"
 )
 parser.add_argument("--epochs", type=int, required=False, help="Number of epochs to train for")
+parser.add_argument("--per_device_batch_size", type=int, required=False, help="The value to use for per_device_train_batch_size and per_device_eval_batch_size in the trainer")
 
 args = parser.parse_args()
 
@@ -148,6 +149,10 @@ default_args = {
 
 if args.epochs:
     default_args["num_train_epochs"] = args.epochs
+if args.per_device_batch_size:
+    default_args["per_device_train_batch_size"] = args.per_device_batch_size
+    default_args["per_device_eval_batch_size"] = args.per_device_batch_size
+    default_args["leraning_rate"] += (1/8)*default_args["leraning_rate"]
 
 # Load the training and validation sets
 source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
