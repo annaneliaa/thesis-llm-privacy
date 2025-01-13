@@ -499,12 +499,13 @@ def tokenize_prompts_in_batches(tokenizer: AutoTokenizer, prompts: dict):
     prompts_ids = [key for key,_ in prompts]
     prompts_strings = [value for _,value in prompts]
 
-    # all sentences will be padded to the next biggest size that is a multiple of padding_steps
-    PADDING_STEPS = 50
+    # all sentences will be padded to the next biggest size that is a multiple of LEN_PER_BATCH
+    # if LEN_PER_BATCH is changed, this must also be done in mia_evaluation
+    LEN_PER_BATCH = 50
     MAX_LENGTH = 512
     # set the starting sentence length
     prompt_len = len(tokenizer.encode(prompts_strings[0]))
-    sentence_len = prompt_len if (prompt_len % PADDING_STEPS) == 0 else prompt_len - (prompt_len % PADDING_STEPS) + PADDING_STEPS
+    sentence_len = prompt_len if (prompt_len % LEN_PER_BATCH) == 0 else prompt_len - (prompt_len % LEN_PER_BATCH) + LEN_PER_BATCH
     lower_bound_prompts_idx = 0
     out_prompts = []
     for i,prompt in enumerate(prompts_strings):
@@ -532,7 +533,7 @@ def tokenize_prompts_in_batches(tokenizer: AutoTokenizer, prompts: dict):
             }
         )
         while sentence_len <= len(tokenizer.encode(prompt)):
-            sentence_len = sentence_len + PADDING_STEPS
+            sentence_len = sentence_len + LEN_PER_BATCH
         lower_bound_prompts_idx = i
     
     # tokenize the last batch

@@ -238,7 +238,7 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, de
             suffix_idx = generation_len - suffix_len
 
         for j, off in enumerate(range(0, len(input_ids), batch_size)):
-            print(f"{j}/{(int)(len(input_ids)/batch_size)}")
+            #print(f"{j}/{(int)(len(input_ids)/batch_size)}") this is a debug print
             # Get the data for the current batch, and realign it
             prompt_batch = input_ids[off:off+batch_size]
             input_ids_batch = torch.tensor(prompt_batch, dtype=torch.int64).to(default_device)

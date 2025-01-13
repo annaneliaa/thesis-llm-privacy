@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH --time=12:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --job-name=experiment-full(100/NL/6B)
+#SBATCH --mem=32000
+#SBATCH --gpus-per-node=a100:1
+
+module purge
+module load Python/3.11.3-GCCcore-12.3.0 
+module load CUDA/11.7.0
+module load Boost/1.79.0-GCC-11.3.0
+
+source $HOME/thesis-llm-privacy/.env/bin/activate
+
+python ./trainer.py --config_file exp-configs/EMEA/100/config-6B-nl.json --epochs 4
+python ./mia.py --config_file exp-configs/EMEA/100/config-6B-nl.json --model_dir /scratch/s5202841/finetuned/EMEA/nl-100-nat-6B
+python ./mia_evaluation.py --config_file exp-configs/EMEA/100/config-6B-nl.json
+
+deactivate

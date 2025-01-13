@@ -53,62 +53,51 @@ with open(args.config_file, "r") as f:
 tokenizer = initTokenizer(MODEL_NAME)
 pad_token_id = tokenizer.pad_token_id
 
+LEN_PER_BATCH = 50
+MAX_LENGTH = 512
+
 def convert_to_dict(dict_list: list):
     res = {}
     for d in dict_list:
         res.update(d)
     return res
 
-def write_stats(results: list, file: str):
+def write_stats(results: list, file: str, percentiles = True):
+    # First write some basic stats
     mean = np.mean(results)
     median = np.median(results)
     std = np.std(results, ddof=1)
-    p25 = np.percentile(results, 25)
-    p50 = np.percentile(results, 50)
-    p75 = np.percentile(results, 75)
-    
     with open(file, "a") as f:
         f.write(f"Mean: {mean}\n")
         f.write(f"Median: {median}\n")
         f.write(f"Standard deviation: {std}\n")
-        f.write(f"25, 50 and 75 Percentiles: {p25} {p50} {p75}\n")
-
-def evaluate_results(results: list, sentence_lengths: list, dir: str, plotting = True):
-    # Make a scatter plot of the results based on the sentence_lengths
-    # Write all sorts of statistical data
-    file = os.path.join(dir, "stats.txt")
-    write_stats(results, file)
-    increased_perplexity_amt = 0
-    for result in results:
-        if result > 1: 
-            increased_perplexity_amt += 1
-    with open(file, "a") as f:
-        f.write(f"Percentage of sentences with ratio greater than 1: {increased_perplexity_amt/len(results)}\n")
-    # Gather and write stats for all results that are above the 75 percentile
-    percentiles = [75,90]
-    for percentile in percentiles:
-        lengths_over_p = []
-        p = np.percentile(results, percentile)
-        for i in range(len(results)):
-            if results[i] > p:
-                lengths_over_p.append(sentence_lengths[i])
-        with open(file, "a") as f:
-            f.write(f"---- Stats for upper {100-percentile} percentile ----\n")
-        write_stats(lengths_over_p, file)
-
-    # If no plots are desired, simply return
-    if not plotting:
+    
+    if not percentiles:
         return
-    # Otherwise, make a scatter plot mapping the loss ratio to the sentence lengths
+    # Write the percentiles, if that is desired.
+    p25 = np.percentile(results, 25)
+    p50 = np.percentile(results, 50)
+    p75 = np.percentile(results, 75)
+    p90 = np.percentile(results, 90)
+    p99 = np.percentile(results, 99)
+    with open(file, "a") as f:
+        f.write(f"25, 50, 75, 90, and 99 Percentiles: {p25} {p50} {p75} {p90} {p99}\n")
+
+# Make a scatter plot mapping the loss ratio to the sentence lengths
+def plot_results(results: list, sentence_lengths: list, means: list, medians: list, dir: str):
+    x_coord = [LEN_PER_BATCH/2 + i for i in range(0, MAX_LENGTH, LEN_PER_BATCH)].append(MAX_LENGTH)
+    percentiles = [75,90,99]
     plt.figure(figsize=(8, 6))
     plt.scatter(sentence_lengths, results, c='blue', s=10, alpha=0.7)
+    plt.plot(x_coord, means, label = "Mean perplexity ratio per batch", color = "red")
+    plt.plot(x_coord, medians, label = "Median perplexity ratio per batch", color = "lightcoral")
     plt.xlabel("Sentence length (tokenized)")
-    plt.ylabel("Loss ratio")
+    plt.ylabel("Perplexity ratio")
     plt.title(f"Membership inference attack {EXPERIMENT_NAME}")
     plt.grid()
     plt.savefig(os.path.join(dir, "plot.png"), dpi = 300, bbox_inches = "tight")
     # Make a plot with only the lower 90 percentile, and with the upper 10 percentile
-    _, top_init = plt.ylim
+    _, top_init = plt.ylim()
     for percentile in percentiles:
         p = np.percentile(results, percentile)
         plt.ylim(bottom=p, top = top_init)
@@ -118,6 +107,28 @@ def evaluate_results(results: list, sentence_lengths: list, dir: str, plotting =
         plt.title(f"Membership inference attack {EXPERIMENT_NAME}: Results in the lower {percentile} percentile")
         plt.savefig(os.path.join(dir, f"plot_under_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
 
+# Write all sorts of statistical data
+def evaluate_results(results: list, sentence_lengths: list, dir: str):
+    file = os.path.join(dir, "stats.txt")
+    write_stats(results, file)
+    increased_perplexity_amt = 0
+    for result in results:
+        if result > 1: 
+            increased_perplexity_amt += 1
+    with open(file, "a") as f:
+        f.write(f"Percentage of sentences with ratio greater than 1: {increased_perplexity_amt/len(results)}\n")
+    # Gather and write stats for all results that are above the 75 percentile
+    percentiles = [75,90,99]
+    for percentile in percentiles:
+        lengths_over_p = []
+        p = np.percentile(results, percentile)
+        for i in range(len(results)):
+            if results[i] > p:
+                lengths_over_p.append(sentence_lengths[i])
+        with open(file, "a") as f:
+            f.write(f"---- Stats for sentence length of upper {100-percentile} percentile in perplexity ratio ----\n")
+        write_stats(lengths_over_p, file, False)
+
 
 def main():
     logger.info("===== Evaluating experiment %s =====", EXPERIMENT_NAME)
@@ -125,23 +136,31 @@ def main():
     with open(os.path.join(data_dir, DATASET_NAME + "." + LANGUAGE), "r") as f:
         dataset = f.readlines()
     res_dir = get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
+    
     # generate some stats for the losses obtained
     losses_trained = torch.load(os.path.join(res_dir, "losses_trained.pt"))
     write_stats([item for batch in losses_trained for item in batch], os.path.join(res_dir, "losses_trained_stats.txt"))
     losses_untrained = torch.load(os.path.join(res_dir, "losses_untrained.pt"))
     write_stats([item for batch in losses_untrained for item in batch], os.path.join(res_dir, "losses_untrained_stats.txt"))
+    
     # analyze the results of the mia
-    results_list = torch.load(os.path.join(res_dir, "mia.pt"))
-    results = convert_to_dict(results_list)
+    results_list_dict = torch.load(os.path.join(res_dir, "mia.pt"))
+    results = convert_to_dict(results_list_dict)
     sentence_lengths = [min(len(tokenizer.encode(dataset[key])), 512) for key in results.keys()]
-    evaluate_results(list(results.values()), sentence_lengths, res_dir)
+    torch.save(sentence_lengths, os.path.join(res_dir, "sentence_lengths"))
+    results_list = list(results.values())
+    evaluate_results(results_list, sentence_lengths, res_dir)
+    means = [np.mean(result) for result in results]
+    medians = [np.median(result) for result in results]
+    plot_results(results_list, sentence_lengths, means, medians, res_dir)
+    
     # analyze stats for each batch individually, no plotting done for every batch
     stats_file = os.path.join(res_dir, "stats.txt")
     prev = 0
-    for i, result in enumerate(results_list):
+    for i, result in enumerate(results_list_dict):
         with open(stats_file, "a") as f:
             f.write(f"\n---- Stats for batch {i} ----\n")
-        evaluate_results(list(result.values()), sentence_lengths[prev:prev+len(result.values())], res_dir, False)
+        evaluate_results(list(result.values()), sentence_lengths[prev:prev+len(result.values())], res_dir)
         prev += len(result.values())
     logger.info("===== Done! =====")
 

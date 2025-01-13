@@ -1,0 +1,23 @@
+{
+    "root_dir": "tmp/",
+    "dataset_dir": "EMEA",
+    "source_dir": "./datasets",
+    "dataset_name": "EMEA-c",
+    "experiment_name": "en-100-nat-125M-E2",
+    "preprocessing": true,
+    "normalization": false,
+    "batching": true,
+    "num_trials": 100,
+    "language": "en",
+    "split": "train",
+    "suffix_len": 50,
+    "prefix_len": 50,
+    "example_token_len": 100,
+    "preprefix_len": 0,
+    "source_file": "train_dataset.npy",
+    "batch_size": 64,
+    "per_device_train_batch_size": 8,
+    "model": "EleutherAI/gpt-neo-125M",
+    "validation_split_percentage": 0.1,
+    "seed": 42
+}
