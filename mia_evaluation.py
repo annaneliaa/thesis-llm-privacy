@@ -85,7 +85,8 @@ def write_stats(results: list, file: str, percentiles = True):
 
 # Make a scatter plot mapping the loss ratio to the sentence lengths
 def plot_results(results: list, sentence_lengths: list, means: list, medians: list, dir: str):
-    x_coord = [LEN_PER_BATCH/2 + i for i in range(0, MAX_LENGTH, LEN_PER_BATCH)].append(MAX_LENGTH)
+    x_coord = [i for i in range(LEN_PER_BATCH/2, MAX_LENGTH, LEN_PER_BATCH)]
+    x_coord.append(MAX_LENGTH)
     percentiles = [75,90,99]
     plt.figure(figsize=(8, 6))
     plt.scatter(sentence_lengths, results, c='blue', s=10, alpha=0.7)
@@ -147,11 +148,11 @@ def main():
     results_list_dict = torch.load(os.path.join(res_dir, "mia.pt"))
     results = convert_to_dict(results_list_dict)
     sentence_lengths = [min(len(tokenizer.encode(dataset[key])), 512) for key in results.keys()]
-    torch.save(sentence_lengths, os.path.join(res_dir, "sentence_lengths"))
+    torch.save(sentence_lengths, os.path.join(res_dir, "sentence_lengths.pt"))
     results_list = list(results.values())
     evaluate_results(results_list, sentence_lengths, res_dir)
-    means = [np.mean(result) for result in results]
-    medians = [np.median(result) for result in results]
+    means = [np.mean(list(result.values())) for result in results_list_dict]
+    medians = [np.median(list(result.values())) for result in results_list_dict]
     plot_results(results_list, sentence_lengths, means, medians, res_dir)
     
     # analyze stats for each batch individually, no plotting done for every batch

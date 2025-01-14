@@ -5,6 +5,7 @@ import logging
 from IPython.display import display
 from transformers import AutoTokenizer
 
+# This is were almost all intermediate results are stored. This directory needs a lot of space.
 cache_dir = "/scratch/s5202841"
 
 class JupyterHandler(logging.Handler):
@@ -89,6 +90,10 @@ def get_path(preprocessing: bool, normalization: bool, example_token_len = 0):
         dir = dir = os.path.join(dir, "natural")
     return dir
 
+def get_cache_directory():
+    os.makedirs(cache_dir, exist_ok=True)
+    return cache_dir
+
 # gets the path to the correct repository that holds the initial datasets
 def get_data_directory(dataset_dir, preprocessing: bool, normalization: bool, example_token_len = 0):
     dir = os.path.join(cache_dir, dataset_dir, get_path(preprocessing, normalization, example_token_len))
@@ -110,5 +115,10 @@ def get_mia_result_directory(root_dir, dataset_dir, experiment_name):
 # gets the path to the correct repository that holds the results
 def get_canary_result_directory(root_dir, dataset_dir, experiment_name):
     dir = os.path.join(cache_dir, root_dir, dataset_dir, "canary", experiment_name)
+    os.makedirs(dir, exist_ok=True)
+    return dir
+
+def get_model_directory(dataset_dir, experiment_name):
+    dir = os.path.join(cache_dir, "finetuned", dataset_dir, experiment_name)
     os.makedirs(dir, exist_ok=True)
     return dir

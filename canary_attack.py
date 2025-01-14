@@ -67,7 +67,7 @@ logger.info(f"Default device: {DEFAULT_DEVICE}")
 
 try:
     logger.info("Loading trained model...")
-    MODEL = AutoModelForCausalLM.from_pretrained(MODEL_NAME, low_cpu_mem_usage=True, cache_dir=cache_dir)
+    MODEL = AutoModelForCausalLM.from_pretrained(get_model_directory(DATASET_DIR, EXPERIMENT_NAME), low_cpu_mem_usage=True, cache_dir=cache_dir)
     # move model to GPU
     MODEL.to(DEFAULT_DEVICE)
     logger.info("Model loaded successfully.")

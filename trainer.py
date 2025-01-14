@@ -60,12 +60,11 @@ with open(args.config_file, "r") as f:
     SEED
 ) = load_constants_from_config(config)
 
-# Change to .env later
-# This is the dir on Habrok where I store all models actively in use
-HF_CACHE_DIR = "/scratch/s5202841"
+# This directory is used for caching the models during training
+HF_CACHE_DIR = get_cache_directory()
 
-# Set up trainer
-output_dir = os.path.join(HF_CACHE_DIR, "finetuned", DATASET_DIR, EXPERIMENT_NAME)
+# The directory where the trained model will be stored
+output_dir = get_model_directory(DATASET_DIR, EXPERIMENT_NAME)
 
 logger.info("Saving trained model to %s", output_dir)
 

@@ -14,7 +14,7 @@ module load Boost/1.79.0-GCC-11.3.0
 source $HOME/thesis-llm-privacy/.env/bin/activate
 
 python ./trainer.py --config_file exp-configs/EMEA/100/e4/config-1.3B-nl.json --epochs 4
-python ./mia.py --config_file exp-configs/EMEA/100/e4/config-1.3B-nl.json --model_dir /scratch/s5202841/finetuned/EMEA/nl-100-nat-1.3B-E4
+python ./mia.py --config_file exp-configs/EMEA/100/e4/config-1.3B-nl.json
 python ./mia_evaluation.py --config_file exp-configs/EMEA/100/e4/config-1.3B-nl.json
 
 deactivate

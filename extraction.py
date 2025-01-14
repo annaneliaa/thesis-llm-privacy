@@ -84,7 +84,7 @@ if args.cache_dir:
     cache_dir = args.cache_dir
 else:
     # Get cache dir from .env
-    cache_dir = "/scratch/s5202841"
+    cache_dir = get_cache_directory()
 
 # Load model and tokenizer
 try:

@@ -21,7 +21,6 @@ logger.info("Parsing arguments...")
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
-parser.add_argument("--model_dir", type=str, required=True, help="Path to the directory with the saved model")
 parser.add_argument("--cache_dir", type=str, required=False, help="Path to the cache directory")
 
 args = parser.parse_args()
@@ -55,14 +54,6 @@ with open(args.config_file, "r") as f:
 
 HGmodel = MODEL_NAME
 
-if args.model_dir:
-    # Path to finetuned model is provided
-    MODEL_NAME = args.model_dir
-    logger.info(f"Model directory provided: {MODEL_NAME}")
-    logger.info("Executing membership inference attack on finetuned model.")
-else:
-    logger.info("Model directory not provided, using default model specified in config.")
-
 # Set default device
 if torch.cuda.is_available():
     DEFAULT_DEVICE = "cuda"
@@ -77,7 +68,9 @@ if args.cache_dir:
     cache_dir = args.cache_dir
 else:
     # Get cache dir from .env
-    cache_dir = "/scratch/s5202841"
+    cache_dir = get_cache_directory()
+
+MODEL_NAME = get_model_directory(DATASET_DIR, EXPERIMENT_NAME)
 
 # Load models and tokenizer
 tokenizer = initTokenizer(HGmodel)
