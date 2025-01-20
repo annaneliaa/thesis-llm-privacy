@@ -22,7 +22,6 @@ logger.info("Parsing arguments...")
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
-parser.add_argument("--insertions", type=int, required=False, help="The number of times the canary is inserted")
 args = parser.parse_args()
 
 
@@ -89,8 +88,8 @@ def sample_canaries(prefix: str, suffix: str):
     sample_sentences = [prefix + " " + sample_suffix for sample_suffix in sample_suffixes]
     tokenized = tokenizer(sample_sentences, max_length=512, padding=True, truncation=True, return_tensors="pt")
     logger.info("Computing losses for canary variants")
-    losses = compute_losses_per_batch(MODEL, [tokenized], DEFAULT_DEVICE, BATCH_SIZE, digit_amount)[0]
-    # TODO potentially add further processing steps
+    losses_mean = compute_losses_per_batch(MODEL, [tokenized], DEFAULT_DEVICE, BATCH_SIZE, digit_amount)
+    losses = [digit_amount*loss for loss in losses_mean[0]]
     return losses
 
 def main():
@@ -109,17 +108,21 @@ def main():
     dir = get_canary_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
     
     logger.info("Saving results...")
-    torch.save(loss_canary, os.path.join(dir, "canary-losses.pt"))
+    torch.save(losses, os.path.join(dir, "canary-losses.pt"))
     with open(os.path.join(dir, "exposure.txt"), "w") as f:
+        f.write(f"The loss of the canary is {loss_canary}")
+        f.write(f"The parameters of the approximation (shape, location, scale) are {shape} {location} {scale}")
         f.write(f"The exposure is {exposure}")
     # TODO add other statistic here
-    # plot the pdf of the approximation, plot the sampling
+    # plot the pdf and cdf of the approximation, plot the sampling, plot the loss of the canary
     x = np.linspace(location - 5*scale, location + 5*scale, 500)
-    pdf = skewnorm.pdf(x,shape,location,scale)
+    pdf = skewnorm.pdf(x, shape, location, scale)
+    cdf = skewnorm.cdf(x, shape, location, scale)
     plt.figure(figsize=(8, 6))
     plt.plot(x, pdf, label = "PDF", color = "orange")
+    plt.plot(x, cdf, label = "CDF", color = "red")
     plt.hist(loss_canary, bins=500, density = True, alpha = 0.6, color="blue", label = "Histogram of samples")
-    plt.axvline(loss_canary, color="red", linestyle="--", label="The loss of the canary", linewidth=1)
+    plt.axvline(loss_canary, color="black", linestyle="--", label="The loss of the canary", linewidth=1)
     plt.xlabel("Exposure")
     plt.ylabel("Probability density")
     plt.title(f"Canary attack {EXPERIMENT_NAME}")

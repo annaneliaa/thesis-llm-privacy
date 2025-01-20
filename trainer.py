@@ -151,7 +151,7 @@ if args.epochs:
 if args.per_device_batch_size:
     default_args["per_device_train_batch_size"] = args.per_device_batch_size
     default_args["per_device_eval_batch_size"] = args.per_device_batch_size
-    default_args["leraning_rate"] += (1/8)*default_args["leraning_rate"]
+    default_args["learning_rate"] += (1/8)*default_args["learning_rate"]
 
 # Load the training and validation sets
 source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)

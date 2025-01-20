@@ -2,8 +2,8 @@
     "root_dir": "tmp/",
     "dataset_dir": "EMEA",
     "source_dir": "./datasets",
-    "dataset_name": "EMEA-c",
-    "experiment_name": "en-100-nat-1.3B-E2",
+    "dataset_name": "EMEA-c-canary-8",
+    "experiment_name": "en-100-nat-2.7B",
     "preprocessing": true,
     "normalization": false,
     "batching": true,
@@ -15,8 +15,8 @@
     "example_token_len": 100,
     "preprefix_len": 0,
     "source_file": "train_dataset.npy",
-    "batch_size": 32,
-    "model": "EleutherAI/gpt-neo-1.3B",
+    "batch_size": 16,
+    "model": "EleutherAI/gpt-neo-2.7B",
     "validation_split_percentage": 0.1,
     "seed": 42
 }

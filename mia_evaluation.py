@@ -85,7 +85,7 @@ def write_stats(results: list, file: str, percentiles = True):
 
 # Make a scatter plot mapping the loss ratio to the sentence lengths
 def plot_results(results: list, sentence_lengths: list, means: list, medians: list, dir: str):
-    x_coord = [i for i in range(LEN_PER_BATCH/2, MAX_LENGTH, LEN_PER_BATCH)]
+    x_coord = [i for i in range((int)(LEN_PER_BATCH/2), MAX_LENGTH, LEN_PER_BATCH)]
     x_coord.append(MAX_LENGTH)
     percentiles = [75,90,99]
     plt.figure(figsize=(8, 6))
@@ -95,6 +95,7 @@ def plot_results(results: list, sentence_lengths: list, means: list, medians: li
     plt.xlabel("Sentence length (tokenized)")
     plt.ylabel("Perplexity ratio")
     plt.title(f"Membership inference attack {EXPERIMENT_NAME}")
+    plt.legend(loc="upper right")
     plt.grid()
     plt.savefig(os.path.join(dir, "plot.png"), dpi = 300, bbox_inches = "tight")
     # Make a plot with only the lower 90 percentile, and with the upper 10 percentile
