@@ -109,7 +109,7 @@ def main():
                 exids.append(line.strip())
         f.close()
     else: 
-        dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "split_indices.json")
+        dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "-split_indices.json")
         # Read indices of training examples in the training dataset
         with open(dataset_base, 'r') as f:
             indices = json.load(f)

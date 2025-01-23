@@ -66,7 +66,7 @@ def main():
     eval_percentage = VAL_SPLIT
 
     # Step 1: split on indices and save them to a file
-    indices_file = os.path.join(dir, "split_indices.json")
+    indices_file = os.path.join(data_set_base + "-split_indices.json")
 
     # take the size of the first language as the size of the dataset
     # this can be the second one as well, the input datasets are already aligned and identical
@@ -100,8 +100,8 @@ def main():
     logger.info("Splitting datasets into train and validation sets...")
     for lang in languages:
         logger.info(f"Processing language: {lang}")
-        train_out_file = os.path.join(dir, "train-" + lang + ".txt")
-        val_out_file = os.path.join(dir, "validation-" + lang + ".txt")
+        train_out_file = os.path.join(dir, DATASET_NAME + "-train-" + lang + ".txt")
+        val_out_file = os.path.join(dir, DATASET_NAME + "-validation-" + lang + ".txt")
 
         # Check if the files already exist
         if os.path.exists(train_out_file) and os.path.exists(val_out_file) and os.path.exists(indices_file):

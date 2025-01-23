@@ -156,12 +156,12 @@ if args.per_device_batch_size:
 # Load the training and validation sets
 source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
 if BATCHING:
-    train = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
+    train = torch.load(os.path.join(source_dir, DATASET_NAME + "-train-" + LANGUAGE + ".pt"))
 else:
-    train = torch.load(os.path.join(source_dir, "train-nb-" + LANGUAGE + ".pt"))
+    train = torch.load(os.path.join(source_dir, DATASET_NAME + "-train-nb-" + LANGUAGE + ".pt"))
 # if the input is not in batches, wrap the input. The training loop will simply run for one iteration
     train = [train]
-val = torch.load(os.path.join(source_dir, "validation-" + LANGUAGE + ".pt"))
+val = torch.load(os.path.join(source_dir, DATASET_NAME + "-validation-" + LANGUAGE + ".pt"))
 
 print("Number of validation sentences:", len(val["input_ids"]))
 

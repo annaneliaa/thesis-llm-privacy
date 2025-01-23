@@ -144,9 +144,9 @@ def main():
     os.makedirs(result_dir, exist_ok=True)
     # Get the prompts
     if BATCHING:
-        prompts = torch.load(os.path.join(source_dir, "train-" + LANGUAGE + ".pt"))
+        prompts = torch.load(os.path.join(source_dir, DATASET_NAME + "-train-" + LANGUAGE + ".pt"))
     else:
-        prompts = [torch.load(os.path.join(source_dir, "train-nb-" + LANGUAGE + ".pt"))]
+        prompts = [torch.load(os.path.join(source_dir, DATASET_NAME + "-train-nb-" + LANGUAGE + ".pt"))]
     # Do the membership inference attack and save the results
     mia_results, losses_trained, losses_untrained = mia_comp(prompts, BATCH_SIZE)
     logger.info("Saving results...")

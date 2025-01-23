@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --time=09:30:00
+#SBATCH --time=10:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --job-name=experiment-full(100/NL/1.3B)
