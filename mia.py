@@ -107,7 +107,7 @@ def mia_comp(prompts: list, batch_size: int):
     losses_trained_npy = [np.array(losses) for losses in losses_trained]
     # This is a small optimization: If the losses have been calculated for another experiment, then we simply load them.
     # The assumption here is that the first experiment is run with one epoch of training, s.t. the experiment name does not have the appendix -ex where x is the number of epochs of training.
-    path_untrained = os.path.join(get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)[:-3], "losses_untrained.pt")
+    path_untrained = os.path.join(get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME, False), "losses_untrained.pt")
     if not os.path.exists(path_untrained):
         logger.info("Computing losses for untrained model.")
         losses_untrained = compute_losses_per_batch(MODEL_UNTRAINED, prompts, DEFAULT_DEVICE, batch_size)
@@ -140,6 +140,7 @@ def main():
     logger.info("====== Starting membership inference attack ======")
     # Get and create directories
     result_dir = get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
+    result_dir_no_epoch = get_mia_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME, False)
     source_dir = get_source_directory(SOURCE_DIR, DATASET_DIR, LANGUAGE, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
     os.makedirs(result_dir, exist_ok=True)
     # Get the prompts
@@ -152,7 +153,7 @@ def main():
     logger.info("Saving results...")
     # Save the losses for potential analysis later on
     torch.save(losses_trained, os.path.join(result_dir, "losses_trained.pt"))
-    torch.save(losses_untrained, os.path.join(result_dir, "losses_untrained.pt"))
+    torch.save(losses_untrained, os.path.join(result_dir_no_epoch, "losses_untrained.pt"))
     if BATCHING:
         torch.save(mia_results, os.path.join(result_dir, "mia.pt"))    
     else:

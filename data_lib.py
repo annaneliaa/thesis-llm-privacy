@@ -489,23 +489,20 @@ def text_to_jsonlines_exids(input_file, output_file, exids):
             f_output.write('\n')
 
 # pads the prompts in batches of approximately the same sizes to minimize padding
-# input: A tokenizer, as well as a dictionary of prompts mapped to their id
+# input: A tokenizer, as well as a dictionary of prompts mapped to their id, all sentences will be padded to the next biggest size that is a multiple of len_per_batch
 # returns a list of tensors where every tensor contains equally long (padded) prompts, 
 # their attention masks, and the ids of the sentences in the batch (in order)
-def tokenize_prompts_in_batches(tokenizer: AutoTokenizer, prompts: dict):
+def tokenize_prompts_in_batches(tokenizer: AutoTokenizer, prompts: dict, len_per_batch = 50):
     # Write the prompts into a list, and sort the list based on the prompt lengths, then make it a dict again
     print("Sorting %d sentences based on their token length.", len(prompts.keys()))
     prompts = sorted(prompts.items(), key=lambda item: len(tokenizer.encode(item[1])))
     prompts_ids = [key for key,_ in prompts]
     prompts_strings = [value for _,value in prompts]
 
-    # all sentences will be padded to the next biggest size that is a multiple of LEN_PER_BATCH
-    # if LEN_PER_BATCH is changed, this must also be done in mia_evaluation
-    LEN_PER_BATCH = 50
     MAX_LENGTH = 512
     # set the starting sentence length
     prompt_len = len(tokenizer.encode(prompts_strings[0]))
-    sentence_len = prompt_len if (prompt_len % LEN_PER_BATCH) == 0 else prompt_len - (prompt_len % LEN_PER_BATCH) + LEN_PER_BATCH
+    sentence_len = prompt_len if (prompt_len % len_per_batch) == 0 else prompt_len - (prompt_len % len_per_batch) + len_per_batch
     lower_bound_prompts_idx = 0
     out_prompts = []
     for i,prompt in enumerate(prompts_strings):
@@ -533,7 +530,7 @@ def tokenize_prompts_in_batches(tokenizer: AutoTokenizer, prompts: dict):
             }
         )
         while sentence_len <= len(tokenizer.encode(prompt)):
-            sentence_len = sentence_len + LEN_PER_BATCH
+            sentence_len = sentence_len + len_per_batch
         lower_bound_prompts_idx = i
     
     # tokenize the last batch

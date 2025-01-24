@@ -81,7 +81,8 @@ def main():
         logger.info("===== Tokenizing training data in batches =====")
         # Create mapping from ids to strings for training dataset
         train_dataset_map = {train_indices[i]: train_data[i] for i in range(len(train_indices))}
-        tokenized_train_dataset = tokenize_prompts_in_batches(tokenizer, train_dataset_map)
+        # if LEN_PER_BATCH (50) is changed, this must also be done in plot_lib, if the experiment is membership inference
+        tokenized_train_dataset = tokenize_prompts_in_batches(tokenizer, train_dataset_map, 50)
     else:
         logger.info("===== Tokenizing training data without batches =====")
         # this call pads to the longest sequence in the dataset, and truncates to max_length (at most)

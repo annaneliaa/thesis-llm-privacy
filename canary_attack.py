@@ -10,6 +10,7 @@ from scipy.stats import skewnorm
 import numpy as np
 import matplotlib.pyplot as plt
 from util_lib import *
+from data_lib import tokenize_prompts_in_batches
 from experiment_lib import compute_losses_per_batch
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -80,50 +81,65 @@ pad_token_id = tokenizer.pad_token_id
 SAMPLE_SIZE = 100000
 
 
-def sample_canaries(prefix: str, suffix: str):
+def sample_canaries(prefix: str, suffix: str, prefix_len):
     logger.info("Sampling canary variants")
     digit_amount = len(suffix)
+    # generate the canary candidates used for sampling
     number_range = 10**digit_amount - 1
     sample_suffixes = [f"{random.randint(0, number_range):0{digit_amount}}" for i in range(SAMPLE_SIZE)]
     sample_sentences = [prefix + " " + sample_suffix for sample_suffix in sample_suffixes]
-    tokenized = tokenizer(sample_sentences, max_length=512, padding=True, truncation=True, return_tensors="pt")
+    # Tokenize the sentences. Because the numbers might be split into a different amount of tokens, this is done in batches where every batch has uniform length (without padding/truncation)
+    logger.info("Tokenizing canary variants")
+    tokenized = tokenize_prompts_in_batches(tokenizer, {i: sample_sentences[i] for i in range(len(sample_sentences))}, 1)
+    # Now compute the losses per batch
     logger.info("Computing losses for canary variants")
-    losses_mean = compute_losses_per_batch(MODEL, [tokenized], DEFAULT_DEVICE, BATCH_SIZE, digit_amount)
-    losses = [digit_amount*loss for loss in losses_mean[0]]
+    losses_mean = compute_losses_per_batch(MODEL, tokenized, DEFAULT_DEVICE, BATCH_SIZE, prefix_len)
+    losses = []
+    # The previous losses are means, but we want sums. Hence, multiply by the suffix lengths, which differ per batch.
+    for i, batch in enumerate(losses_mean):
+        suffix_len = len(tokenized[i]["sentence_ids"][0]) - prefix_len
+        losses.extend([suffix_len*loss for loss in batch])
     return losses
 
 def main():
     logger.info("===== Starting canary attack =====")
-    with open(os.path.join(DATASET_DIR, "canary", f"-{LANGUAGE}.json"), "r") as f:
+    # Load the canary
+    with open(os.path.join(DATASET_DIR, "canary" + f"-{LANGUAGE}.json"), "r") as f:
             canary = json.load(f)
-    digit_amount = len(canary["suffix"])
-    losses = sample_canaries(canary["prefix"], canary["suffix"])
-    shape, location, scale = skewnorm.fit(losses)
+    
+    prefix_len = len(tokenizer.encode(canary["prefix"]))
+    # Sample the losses of potential canaries, and fit a skew normal distribution for that sample
+    sample_losses = sample_canaries(canary["prefix"], canary["suffix"])
+    shape, location, scale = skewnorm.fit(sample_losses)
+    
+    # Tokenize the canary, then calculate its loss
     tokenized_canary = tokenizer([canary["prefix"] + " " + canary["suffix"]], max_length=512, padding=True, truncation=True, return_tensors="pt")
     logger.info("Calculating loss for canary")
-    loss_canary = compute_losses_per_batch(MODEL, [tokenized_canary], DEFAULT_DEVICE, BATCH_SIZE, digit_amount)[0][0]
-    # This logarithm computes with base e
-    logger.info("Calculating canary exposure")
-    exposure = -math.log(skewnorm.ppf(loss_canary, shape, location, scale))
-    dir = get_canary_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
+    loss_canary = compute_losses_per_batch(MODEL, [tokenized_canary], DEFAULT_DEVICE, BATCH_SIZE, prefix_len)
+    loss_canary = loss_canary[0][0]*(len(tokenized_canary["sentence_ids"][0]) - prefix_len)
     
+    # Calculate the exposure of the actual canary based on the approximated distribution and the loss of the canary
+    logger.info("Calculating canary exposure")
+    # This logarithm computes with base e
+    exposure = -1*math.log(skewnorm.ppf(loss_canary, shape, location, scale))
+    
+    # Save the results, plot the distribution
     logger.info("Saving results...")
-    torch.save(losses, os.path.join(dir, "canary-losses.pt"))
+    dir = get_canary_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
+    torch.save(sample_losses, os.path.join(dir, "canary-losses.pt"))
     with open(os.path.join(dir, "exposure.txt"), "w") as f:
-        f.write(f"The loss of the canary is {loss_canary}")
-        f.write(f"The parameters of the approximation (shape, location, scale) are {shape} {location} {scale}")
-        f.write(f"The exposure is {exposure}")
+        f.write(f"The loss of the canary is {loss_canary}\n")
+        f.write(f"The parameters of the approximation (shape, location, scale) are {shape} {location} {scale}\n")
+        f.write(f"The exposure is {exposure}\n")
     # TODO add other statistic here
-    # plot the pdf and cdf of the approximation, plot the sampling, plot the loss of the canary
+    # plot the pdf of the approximation, plot the sampling as a histogram, plot the loss of the canary
     x = np.linspace(location - 5*scale, location + 5*scale, 500)
     pdf = skewnorm.pdf(x, shape, location, scale)
-    cdf = skewnorm.cdf(x, shape, location, scale)
     plt.figure(figsize=(8, 6))
     plt.plot(x, pdf, label = "PDF", color = "orange")
-    plt.plot(x, cdf, label = "CDF", color = "red")
-    plt.hist(loss_canary, bins=500, density = True, alpha = 0.6, color="blue", label = "Histogram of samples")
+    plt.hist(sample_losses, bins=500, density = True, alpha = 0.6, color="blue", label = "Histogram of samples")
     plt.axvline(loss_canary, color="black", linestyle="--", label="The loss of the canary", linewidth=1)
-    plt.xlabel("Exposure")
+    plt.xlabel("Losses")
     plt.ylabel("Probability density")
     plt.title(f"Canary attack {EXPERIMENT_NAME}")
     plt.legend(loc = "upper left")

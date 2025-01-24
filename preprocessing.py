@@ -110,7 +110,7 @@ def main():
     # Output file is in JSONL format
     # Create new sentence pairs and record their new sizes
     # Groups default is 12
-    logger.info("Concatening remaining sentences to %s", out_file)
+    logger.info("Concatenating remaining sentences to %s", out_file)
     group_sentences(in_file, out_file, groups=12)
 
 

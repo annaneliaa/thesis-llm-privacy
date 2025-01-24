@@ -1,9 +1,15 @@
 import wandb
 import os
 import json
+import torch
 import numpy as np
 import statistics
 import matplotlib.pyplot as plt
+
+LEN_PER_BATCH = 50
+MAX_LENGTH = 512
+x_coord = [i for i in range((int)(LEN_PER_BATCH/2), MAX_LENGTH, LEN_PER_BATCH)]
+x_coord.append(MAX_LENGTH)
 
 def plot_max_BLEU(exp_name, model, dataset_dir, language, example_token_len, prefix_len, num_trials):
     # wandb_key = os.getenv('WANDB_API_KEY')
@@ -206,3 +212,54 @@ def avg_10_highest_conf(exp_name, model, dataset_dir, language, example_token_le
 
     # Finish the wandb run
     wandb.finish()
+
+def set_up_plot(ax, title, xlabel, ylabel):
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.legend(loc="upper right")
+
+# Make a scatter plot mapping the loss ratio to the sentence lengths
+def plot_results_scatter(results: list, sentence_lengths: list, means: list, medians: list, dir: str, experiment_name: str):
+    percentiles = [75,90,99]
+    fig, ax = plt.subplots(1,2,figsize=(8,6))
+    set_up_plot(ax[0], f"Membership inference attack {experiment_name}", "Sentence length (tokenized)", "Perplexity ratio")
+    ax[0].scatter(sentence_lengths, results, c='blue', s=10, alpha=0.7)
+    ax[0].plot(x_coord, means, label = "Mean perplexity ratio per batch", color = "red")
+    ax[0].plot(x_coord, medians, label = "Median perplexity ratio per batch", color = "lightcoral")
+    ax[0].grid(True)
+    plt.savefig(os.path.join(dir, "plot.png"), dpi = 300, bbox_inches = "tight")
+    # Make a plot with only the lower 90 percentile, and with the upper 10 percentile
+    _, top_init = plt.ylim()
+    for percentile in percentiles:
+        p = np.percentile(results, percentile)
+        ax[0].ylim(bottom=p, top = top_init)
+        plt.title(f"Membership inference attack {experiment_name}: Results in the highest {100-percentile} percentile")
+        plt.savefig(os.path.join(dir, f"plot_over_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
+        ax[0].ylim(bottom = 0, top=p)
+        plt.title(f"Membership inference attack {experiment_name}: Results in the lower {percentile} percentile")
+        plt.savefig(os.path.join(dir, f"plot_under_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
+
+def plotting_means_medians(ax, data_list_dict, experiment_description, color):
+    means = [np.mean(list(result.values())) for result in data_list_dict]
+    # TODO add other parameters to plotting (color)
+    ax[0].plot(x_coord, means, label = "Mean of " + experiment_description)
+    medians = [np.median(list(result.values())) for result in data_list_dict]
+    ax[1].plot(x_coord, medians, label = "Median of " + experiment_description)
+    return ax
+
+
+def plot_means_medians(folders: list, base_dir:str, result_dir: str, experiment_description):
+    # initialize the plots
+    fig, ax = plt.subplots(1,2,figsize=(8,6))
+    set_up_plot(ax[0], "Means for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
+    set_up_plot(ax[1], "Medians for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
+
+    for folder in folders:
+        # load the results and calculate means and medians and add them to the respective plot
+        results_list_dict = torch.load(os.path.join(base_dir, folder, "mia.pt"))
+        plotting_means_medians(ax, results_list_dict, folder, )
+
+    # Save the plots
+    ax[0].figure.savefig(os.path.join(result_dir, "means.png"), bbox_inches="tight")
+    ax[1].figure.savefig(os.path.join(result_dir, "medians.png"), bbox_inches="tight")

@@ -106,9 +106,12 @@ def get_source_directory(source_dir, dataset_dir, language, preprocessing: bool,
     os.makedirs(dir, exist_ok=True)
     return dir
 
-# gets the path to the correct repository that holds the results
-def get_mia_result_directory(root_dir, dataset_dir, experiment_name):
+# gets the path to the correct repository that holds the results, epoch specifies whether the ending should specify the epochs of training of the experiment, or whether it be general purpose
+# e.g. if it returns path/en-100-nat-1.3B-E1 for epoch = True, it returns path/en-100-nat-1.3B with epoch = False
+def get_mia_result_directory(root_dir, dataset_dir, experiment_name, epoch = True):
     dir = os.path.join(cache_dir, root_dir, dataset_dir, "mia", experiment_name)
+    if not epoch and dir[-3:-1] == "-E":
+        dir = dir[:-3]
     os.makedirs(dir, exist_ok=True)
     return dir
 

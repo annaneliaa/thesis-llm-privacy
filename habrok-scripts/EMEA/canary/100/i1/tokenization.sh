@@ -18,6 +18,6 @@ python ./preprocessing.py --config_file exp-configs/EMEA/canary/i1/config-125M-n
 python ./process_data.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json
 python ./split_train_val.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json
 python ./tokenize_data.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json
-python ./tokenize_data.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json
+python ./tokenize_data.py --config_file exp-configs/EMEA/canary/i1/config-125M-en.json
 
 deactivate

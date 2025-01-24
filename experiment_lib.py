@@ -221,7 +221,7 @@ def calculate_likelihoods(loss_per_token_2d, attention_masks_2d):
 # Input: Takes in a list of prompt batches with uniform size, where every batch in the list has a field "attention_mask" and a 
 # field "input_ids", which are lists of tokenized sentences/their attention masks.
 # Returns a list of prompt losses per batch (shape: (batch_amt, batch_prompt_amt))
-def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, default_device: str, batch_size: int, suffix_len = -1) -> list:
+def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, default_device: str, batch_size: int, prefix_len = 0) -> list:
     losses = []
     for i, prompts in enumerate(prompts_list):
         print(f"Computing losses for batch {i}")
@@ -230,13 +230,8 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, de
         # seperate attention masks and input ids. They are both 2d tensors.
         attention_masks = prompts["attention_mask"]
         input_ids = prompts["input_ids"]
-
         generation_len = len(input_ids[0])
-        if suffix_len == -1:
-            suffix_idx = 0
-        else:
-            suffix_idx = generation_len - suffix_len
-
+        
         for j, off in enumerate(range(0, len(input_ids), batch_size)):
             #print(f"{j}/{(int)(len(input_ids)/batch_size)}") this is a debug print
             # Get the data for the current batch, and realign it
@@ -257,7 +252,7 @@ def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, de
                 ).cpu()
                 # Reshape to get an array of shape (batch_size, sequence_length-1) (so every row represents one prompt)
                 # Then calculate the likelihood for each row (sentence), and append the resulting array to batch_losses
-            batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1))[:, suffix_idx:], attention_masks_batch[:, 1:]))
+            batch_losses.extend(calculate_likelihoods(loss_per_token.reshape((-1, generation_len - 1))[:, prefix_len:], attention_masks_batch[:, 1 + prefix_len:]))
             # this is to not run out of gpu memory
             del outputs, logits, input_ids_batch
             torch.cuda.empty_cache()

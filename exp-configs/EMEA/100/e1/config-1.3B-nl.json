@@ -3,7 +3,7 @@
     "dataset_dir": "EMEA",
     "source_dir": "./datasets",
     "dataset_name": "EMEA-c",
-    "experiment_name": "nl-100-nat-1.3B",
+    "experiment_name": "nl-100-nat-1.3B-E1",
     "preprocessing": true,
     "normalization": false,
     "batching": true,
