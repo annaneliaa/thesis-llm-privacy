@@ -2,9 +2,10 @@ import os
 import logging
 import argparse
 import json
+import torch
 import random
 from transformers import set_seed
-from util_lib import load_constants_from_config, initLogger
+from util_lib import load_constants_from_config, initLogger, get_data_directory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -63,22 +64,28 @@ def main():
     logger.info("==== Starting insertion of %d insertions =====", insertions)
     indices = []
     logger.info("Generating indices...")
+    # Create random numbers between 0 and 1
     for i in range(insertions):
         indices.append(random.random())
     print(indices)
     for lang in languages:
         logger.info(f"Inserting for language {lang}")
+        # Open the dataset
         with open(os.path.join(dataset_in + f".{lang}"), "r") as f:
             dataset = f.readlines()
-        print(len(dataset))
+        dataset_len = len(dataset)
+        # Read the canary
         with open(os.path.join(DATASET_DIR, "canary" + f"-{lang}.json"), "r") as f:
             canary_file = json.load(f)
         canary = canary_file["prefix"] + " " + canary_file["suffix"]
+        # Insert the canary
         for _,i in enumerate(indices):
-            index = (int)(i*len(dataset))
+            index = (int)(i*dataset_len)
             dataset.insert(index, canary)
+        # Save the dataset
         with open(os.path.join(dataset_out + f".{lang}"), "w") as f:
             f.writelines(dataset)
+
     logger.info("===== Done =====")
 if __name__ == "__main__":
     main()

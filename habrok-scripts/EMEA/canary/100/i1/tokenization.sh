@@ -16,7 +16,7 @@ source $HOME/thesis-llm-privacy/.env/bin/activate
 python ./canary_insertion.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json --dataset_name EMEA-c --insertions 1
 python ./preprocessing.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json
 python ./process_data.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json
-python ./split_train_val.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json
+python ./split_train_val.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json --canaries_train
 python ./tokenize_data.py --config_file exp-configs/EMEA/canary/i1/config-125M-nl.json
 python ./tokenize_data.py --config_file exp-configs/EMEA/canary/i1/config-125M-en.json
 

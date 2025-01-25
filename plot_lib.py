@@ -218,6 +218,7 @@ def set_up_plot(ax, title, xlabel, ylabel):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend(loc="upper right")
+    return ax
 
 # Make a scatter plot mapping the loss ratio to the sentence lengths
 def plot_results_scatter(results: list, sentence_lengths: list, means: list, medians: list, dir: str, experiment_name: str):
@@ -240,26 +241,26 @@ def plot_results_scatter(results: list, sentence_lengths: list, means: list, med
         plt.title(f"Membership inference attack {experiment_name}: Results in the lower {percentile} percentile")
         plt.savefig(os.path.join(dir, f"plot_under_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
 
-def plotting_means_medians(ax, data_list_dict, experiment_description, color):
+# TODO Change naming
+def plotting_means_medians(ax, data_list_dict, experiment_description):
     means = [np.mean(list(result.values())) for result in data_list_dict]
     # TODO add other parameters to plotting (color)
-    ax[0].plot(x_coord, means, label = "Mean of " + experiment_description)
+    ax[0].plot(x_coord, means, label = experiment_description)
     medians = [np.median(list(result.values())) for result in data_list_dict]
-    ax[1].plot(x_coord, medians, label = "Median of " + experiment_description)
+    ax[1].plot(x_coord, medians, label = experiment_description)
     return ax
 
 
 def plot_means_medians(folders: list, base_dir:str, result_dir: str, experiment_description):
     # initialize the plots
-    fig, ax = plt.subplots(1,2,figsize=(8,6))
-    set_up_plot(ax[0], "Means for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
-    set_up_plot(ax[1], "Medians for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
+    fig, ax = plt.subplots(1,2,figsize=(16,9))
 
     for folder in folders:
         # load the results and calculate means and medians and add them to the respective plot
         results_list_dict = torch.load(os.path.join(base_dir, folder, "mia.pt"))
-        plotting_means_medians(ax, results_list_dict, folder, )
+        plotting_means_medians(ax, results_list_dict, folder)
 
+    set_up_plot(ax[0], "Means for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
+    set_up_plot(ax[1], "Medians for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
     # Save the plots
-    ax[0].figure.savefig(os.path.join(result_dir, "means.png"), bbox_inches="tight")
-    ax[1].figure.savefig(os.path.join(result_dir, "medians.png"), bbox_inches="tight")
+    fig.savefig(os.path.join(result_dir, "means_medians.png"))

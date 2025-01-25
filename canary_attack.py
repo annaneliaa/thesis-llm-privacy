@@ -78,7 +78,7 @@ except Exception as e:
 tokenizer = initTokenizer(MODEL_NAME)
 pad_token_id = tokenizer.pad_token_id
 
-SAMPLE_SIZE = 100000
+SAMPLE_SIZE = 1000000
 
 
 def sample_canaries(prefix: str, suffix: str, prefix_len):
@@ -97,7 +97,7 @@ def sample_canaries(prefix: str, suffix: str, prefix_len):
     losses = []
     # The previous losses are means, but we want sums. Hence, multiply by the suffix lengths, which differ per batch.
     for i, batch in enumerate(losses_mean):
-        suffix_len = len(tokenized[i]["sentence_ids"][0]) - prefix_len
+        suffix_len = len(tokenized[i]["input_ids"][0]) - prefix_len
         losses.extend([suffix_len*loss for loss in batch])
     return losses
 
@@ -109,19 +109,19 @@ def main():
     
     prefix_len = len(tokenizer.encode(canary["prefix"]))
     # Sample the losses of potential canaries, and fit a skew normal distribution for that sample
-    sample_losses = sample_canaries(canary["prefix"], canary["suffix"])
+    sample_losses = sample_canaries(canary["prefix"], canary["suffix"], prefix_len)
     shape, location, scale = skewnorm.fit(sample_losses)
     
     # Tokenize the canary, then calculate its loss
     tokenized_canary = tokenizer([canary["prefix"] + " " + canary["suffix"]], max_length=512, padding=True, truncation=True, return_tensors="pt")
     logger.info("Calculating loss for canary")
     loss_canary = compute_losses_per_batch(MODEL, [tokenized_canary], DEFAULT_DEVICE, BATCH_SIZE, prefix_len)
-    loss_canary = loss_canary[0][0]*(len(tokenized_canary["sentence_ids"][0]) - prefix_len)
+    loss_canary = loss_canary[0][0]*(len(tokenized_canary["input_ids"][0]) - prefix_len)
     
     # Calculate the exposure of the actual canary based on the approximated distribution and the loss of the canary
     logger.info("Calculating canary exposure")
     # This logarithm computes with base e
-    exposure = -1*math.log(skewnorm.ppf(loss_canary, shape, location, scale))
+    exposure = -1*math.log(skewnorm.cdf(loss_canary, shape, location, scale))
     
     # Save the results, plot the distribution
     logger.info("Saving results...")
@@ -139,7 +139,7 @@ def main():
     plt.plot(x, pdf, label = "PDF", color = "orange")
     plt.hist(sample_losses, bins=500, density = True, alpha = 0.6, color="blue", label = "Histogram of samples")
     plt.axvline(loss_canary, color="black", linestyle="--", label="The loss of the canary", linewidth=1)
-    plt.xlabel("Losses")
+    plt.xlabel("Log-perplexity")
     plt.ylabel("Probability density")
     plt.title(f"Canary attack {EXPERIMENT_NAME}")
     plt.legend(loc = "upper left")

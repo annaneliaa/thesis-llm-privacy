@@ -220,7 +220,7 @@ def calculate_likelihoods(loss_per_token_2d, attention_masks_2d):
 
 # Input: Takes in a list of prompt batches with uniform size, where every batch in the list has a field "attention_mask" and a 
 # field "input_ids", which are lists of tokenized sentences/their attention masks.
-# Returns a list of prompt losses per batch (shape: (batch_amt, batch_prompt_amt))
+# Returns a list of mean prompt losses for every sentence per batch (shape: (batch_amt, batch_prompt_amt))
 def compute_losses_per_batch(model: AutoModelForCausalLM, prompts_list: list, default_device: str, batch_size: int, prefix_len = 0) -> list:
     losses = []
     for i, prompts in enumerate(prompts_list):

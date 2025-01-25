@@ -154,6 +154,7 @@ def evaluate_epochs(epochs: int):
     dir = dir[:-1]
     folder_suffix = f"-E{epochs}"
     result_dir = os.path.join(dir, f"E{epochs}")
+    os.makedirs(result_dir, exist_ok=True)
     # Filter all directories for the given epoch. They all have a suffix folder_suffix
     folders = os.listdir(dir)
     folders = [f for f in folders if f.endswith(folder_suffix)]
@@ -165,21 +166,22 @@ def evaluate_epochs(epochs: int):
 # Additionally, we compare the the change in losses between different epochs of training (mia only compares between some epoch of training and untrained) to see how the increase increases with more training.
 # These results are stored with names that end on _epochs_comp.png. All results are in a folder in the results directory that speicifies the experiment, e.g. (100-nat-125M)
 def evaluate_model():
-    languages = ["en,nl"]
-    experiment = EXPERIMENT_NAME[2:-3]
-    experiment_names = [lang + experiment for lang in languages]
+    languages = ["en","nl"]
+    experiment = EXPERIMENT_NAME[3:-3]
+    experiment_names = [lang + EXPERIMENT_NAME[2:-1] for lang in languages]
     dir = get_mia_result_directory(ROOT_DIR, DATASET_DIR, "", True)
     dir = dir[:-1]
+    result_dir = os.path.join(dir, experiment)
+    os.makedirs(result_dir, exist_ok=True)
     folders_all = os.listdir(dir)
     folders = []
     for experiment_name in experiment_names:
         folders.extend([f for f in folders_all if f.startswith(experiment_name)])
     # plot all ratios
-    plot_means_medians(folders, dir, os.path.join(dir, EXPERIMENT_NAME[2:]), f"the {experiment} experiment")
+    plot_means_medians(folders, dir, result_dir, f"the {experiment} experiment")
 
     # set up the plot
-    fig, ax = plt.subplots(1,1,figsize=(8,6))
-    set_up_plot(ax[0], "Perplexity ratios comparing different epochs of training ", "Sentence length (tokenized)", "Perplexity ratio")
+    fig, ax = plt.subplots(1,2,figsize=(16,9))
     # plot all ratio increases, so compare the loss from 1 epoch of training to 2 epochs, from 2 to 4, and so on
     # seperate the folders per language, then sort them 
     folders_lang = []
@@ -190,20 +192,22 @@ def evaluate_model():
     # for the folders for both languages do
     for folders_spec in folders_lang:
         result_0 = torch.load(os.path.join(dir, folders_spec[0], "mia.pt"))
-        plotting_means_medians(ax, result_0, f"ratio of {folders_spec[i]} to untrained model", )
+        ax = plotting_means_medians(ax, result_0, f"untrained model / {folders_spec[0]}")
         for i in range(1, len(folders_spec)):
             # load two results (remember, the folders are sorted), and compute their ratio. e.g. if results are for e1 and e2, we get the ratio e1/e2
             results1 = torch.load(os.path.join(dir, folders_spec[i-1], "mia.pt"))
             results2 = torch.load(os.path.join(dir, folders_spec[i], "mia.pt"))
             result_ratio = []
-            for i in range(len(results1)):
-                result_ratio.append({j: results2[i][j] / results1[i][j] for j in results1[i].keys()})
+            for k in range(len(results1)):
+                result_ratio.append({j: results1[k][j] / results2[k][j] for j in results1[k].keys()})
             
             # Now compute and plot the means and medians
-            plotting_means_medians(ax, result_ratio, f"ratio of {folders_spec[i]} / {folders_spec[i-1]}", )
+            ax = plotting_means_medians(ax, result_ratio, f"{folders_spec[i-1]} / {folders_spec[i]}")
 
-    ax[0].figure.savefig(os.path.join(dir, experiment, "means_epochs_comp.png"), bbox_inches="tight")
-    ax[1].figure.savefig(os.path.join(dir, experiment, "medians_epochs_comp.png"), bbox_inches="tight")
+    set_up_plot(ax[0], "Means of perplexity ratios comparing different epochs of training", "Sentence length (tokenized)", "Perplexity ratio")
+    set_up_plot(ax[1], "Medians of perplexity ratios comparing different epochs of training ", "Sentence length (tokenized)", "Perplexity ratio")
+
+    fig.savefig(os.path.join(result_dir, "means_medians_epochs_comp.png"))
 
 def main():
     if not args.eval_mode:

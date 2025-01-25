@@ -3,6 +3,7 @@ from IPython.display import display
 import os
 import argparse
 import json
+import random
 from util_lib import *
 from torch.utils.data import random_split
 from transformers import set_seed
@@ -20,6 +21,9 @@ logger = initLogger()
 parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument(
     "--config_file", type=str, required=True, help="Path to the configuration file"
+)
+parser.add_argument(
+    "--canaries_train", action="store_true", help="If this flag is used, all instances of the canary will end up in the training set"
 )
 args = parser.parse_args()
 
@@ -84,6 +88,18 @@ def main():
     # Split the indices along with the dataset
     logger.info("Splitting indices...")
     train_indices, eval_indices = random_split(indices, [train_size, eval_size])
+
+    # If this flag is used, ensure that all instances of the canary are in the training set.
+    if args.canaries_train:
+        logger.info("Inserting canary indices into training indices")
+        with open(os.path.join(DATASET_DIR, "canary" + f"-{lang}.json"), "r") as f:
+            canary_file = json.load(f)
+        canary = canary_file["prefix"] + " " + canary_file["suffix"]
+        canary_indices = [i for i, line in enumerate(dataset.splitlines()) if canary in line]
+        for index in canary_indices:
+            if not index in train_indices:
+                # if the index is not in the training set, insert it at a random index
+                train_indices.insert(random.randint(0, len(train_indices)), index)
 
     # Convert Subset objects to lists
     train_indices = train_indices.indices
