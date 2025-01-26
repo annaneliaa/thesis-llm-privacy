@@ -242,12 +242,12 @@ def plot_results_scatter(results: list, sentence_lengths: list, means: list, med
         plt.savefig(os.path.join(dir, f"plot_under_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
 
 # TODO Change naming
-def plotting_means_medians(ax, data_list_dict, experiment_description):
+def plotting_means_medians(ax, data_list_dict, experiment_description, color, marker = "o"):
     means = [np.mean(list(result.values())) for result in data_list_dict]
     # TODO add other parameters to plotting (color)
-    ax[0].plot(x_coord, means, label = experiment_description)
+    ax[0].plot(x_coord, means, label = experiment_description, color = color, marker = marker)
     medians = [np.median(list(result.values())) for result in data_list_dict]
-    ax[1].plot(x_coord, medians, label = experiment_description)
+    ax[1].plot(x_coord, medians, label = experiment_description, color = color, marker = marker)
     return ax
 
 
@@ -255,10 +255,13 @@ def plot_means_medians(folders: list, base_dir:str, result_dir: str, experiment_
     # initialize the plots
     fig, ax = plt.subplots(1,2,figsize=(16,9))
 
-    for folder in folders:
+    colors = ["b", "y", "g", "r"]
+    markers = ["o", "s", "d", "^"]
+
+    for i, folder in enumerate(folders):
         # load the results and calculate means and medians and add them to the respective plot
         results_list_dict = torch.load(os.path.join(base_dir, folder, "mia.pt"))
-        plotting_means_medians(ax, results_list_dict, folder)
+        plotting_means_medians(ax, results_list_dict, folder, colors[len(markers) // i], markers[i % len(markers)])
 
     set_up_plot(ax[0], "Means for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
     set_up_plot(ax[1], "Medians for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
