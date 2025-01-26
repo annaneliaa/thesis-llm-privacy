@@ -3,7 +3,7 @@
     "dataset_dir": "EMEA",
     "source_dir": "./datasets",
     "dataset_name": "EMEA-c-canary-1",
-    "experiment_name": "en-100-nat-1.3B",
+    "experiment_name": "en-100-nat-1.3B-can-I1",
     "preprocessing": true,
     "normalization": false,
     "batching": true,

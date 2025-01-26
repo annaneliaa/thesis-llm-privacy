@@ -2,7 +2,7 @@
 #SBATCH --time=05:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --job-name=experiment-full(100/EN/1.3B)
+#SBATCH --job-name=experiment-full(100/EN/1.3B-i1)
 #SBATCH --mem=16000
 #SBATCH --gpus-per-node=a100:1
 

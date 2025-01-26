@@ -88,22 +88,21 @@ def main():
     # Split the indices along with the dataset
     logger.info("Splitting indices...")
     train_indices, eval_indices = random_split(indices, [train_size, eval_size])
+    # Convert Subset objects to lists
+    train_indices = train_indices.indices
+    eval_indices = eval_indices.indices
 
     # If this flag is used, ensure that all instances of the canary are in the training set.
     if args.canaries_train:
         logger.info("Inserting canary indices into training indices")
-        with open(os.path.join(DATASET_DIR, "canary" + f"-{lang}.json"), "r") as f:
+        with open(os.path.join(DATASET_DIR, "canary" + f"-{languages[0]}.json"), "r") as f:
             canary_file = json.load(f)
         canary = canary_file["prefix"] + " " + canary_file["suffix"]
-        canary_indices = [i for i, line in enumerate(dataset.splitlines()) if canary in line]
+        canary_indices = [i for i, line in enumerate(dataset) if canary in line]
         for index in canary_indices:
             if not index in train_indices:
                 # if the index is not in the training set, insert it at a random index
                 train_indices.insert(random.randint(0, len(train_indices)), index)
-
-    # Convert Subset objects to lists
-    train_indices = train_indices.indices
-    eval_indices = eval_indices.indices
 
     print("# of indices: ", len(train_indices)+ len(eval_indices))
     

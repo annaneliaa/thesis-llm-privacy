@@ -2,7 +2,7 @@
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --job-name=experiment-tokenization{100}
+#SBATCH --job-name=experiment-tokenization{100-i1}
 #SBATCH --mem=32000
 #SBATCH --gpus-per-node=a100:1
 

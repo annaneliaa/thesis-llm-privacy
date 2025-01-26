@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --time=02:15:00
+#SBATCH --time=01:10:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --job-name=experiment-full(100/NL/125M)
+#SBATCH --job-name=experiment-full(100/NL/125M-i1)
 #SBATCH --mem=16000
 #SBATCH --gpus-per-node=a100:1
 
