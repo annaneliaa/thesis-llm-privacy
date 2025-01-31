@@ -159,7 +159,7 @@ def evaluate_epochs(epochs: int):
     folders = os.listdir(dir)
     folders = [f for f in folders if f.endswith(folder_suffix)]
     # plot the means and medians
-    plot_means_medians(sorted(folders), dir, result_dir, f"{epochs} of training")
+    plot_means_medians(sorted(folders), dir, result_dir, f"{epochs} epoch(s) of training")
 
 # Evaluate all experiments of a certain model, for both languages (e.g. all experiments on the 125M model with specified pretraining)
 # Output: One plot of all means for experiments that have run for the specified amount of epochs, and one such plot for the medians.
@@ -169,8 +169,7 @@ def evaluate_model():
     languages = ["en","nl"]
     experiment = EXPERIMENT_NAME[3:-3]
     experiment_names = [lang + EXPERIMENT_NAME[2:-1] for lang in languages]
-    dir = get_mia_result_directory(ROOT_DIR, DATASET_DIR, "", True)
-    dir = dir[:-1]
+    dir = get_mia_result_directory(ROOT_DIR, DATASET_DIR, "", True).strip("/")
     result_dir = os.path.join(dir, experiment)
     os.makedirs(result_dir, exist_ok=True)
     folders_all = os.listdir(dir)
@@ -190,8 +189,9 @@ def evaluate_model():
         folders_lang.append([f for f in folders_all if f.startswith(experiment_name)])
     folders_lang = [sorted(f) for f in folders_lang]
 
-    colors = ["b", "y", "g", "r"]
-    markers = ["o", "s", "d", "^"]
+    colors = get_colors()
+    markers = get_markers()
+    folders_len_half = (int)(len(folders) / 2)
     # for the folders for both languages do
     for folders_spec in folders_lang:
         result_0 = torch.load(os.path.join(dir, folders_spec[0], "mia.pt"))
@@ -205,7 +205,7 @@ def evaluate_model():
                 result_ratio.append({j: results1[k][j] / results2[k][j] for j in results1[k].keys()})
             
             # Now compute and plot the means and medians
-            ax = plotting_means_medians(ax, result_ratio, f"{folders_spec[i-1]} / {folders_spec[i]}", colors[len(markers) // i], markers[i % len(markers)])
+            ax = plotting_means_medians(ax, result_ratio, f"{folders_spec[i-1]} / {folders_spec[i]}", colors[i // folders_len_half], markers[i % folders_len_half])
 
     set_up_plot(ax[0], "Means of perplexity ratios comparing different epochs of training", "Sentence length (tokenized)", "Perplexity ratio")
     set_up_plot(ax[1], "Medians of perplexity ratios comparing different epochs of training ", "Sentence length (tokenized)", "Perplexity ratio")

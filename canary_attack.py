@@ -7,8 +7,6 @@ import random
 import math
 from transformers import set_seed, AutoModelForCausalLM
 from scipy.stats import skewnorm
-import numpy as np
-import matplotlib.pyplot as plt
 from util_lib import *
 from data_lib import tokenize_prompts_in_batches
 from experiment_lib import compute_losses_per_batch
@@ -127,24 +125,15 @@ def main():
     logger.info("Saving results...")
     dir = get_canary_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
     torch.save(sample_losses, os.path.join(dir, "canary-losses.pt"))
-    with open(os.path.join(dir, "exposure.txt"), "w") as f:
-        f.write(f"The loss of the canary is {loss_canary}\n")
-        f.write(f"The parameters of the approximation (shape, location, scale) are {shape} {location} {scale}\n")
-        f.write(f"The exposure is {exposure}\n")
-    # TODO add other statistic here
-    # plot the pdf of the approximation, plot the sampling as a histogram, plot the loss of the canary
-    x = np.linspace(location - 5*scale, location + 5*scale, 500)
-    pdf = skewnorm.pdf(x, shape, location, scale)
-    plt.figure(figsize=(8, 6))
-    plt.plot(x, pdf, label = "PDF", color = "orange")
-    plt.hist(sample_losses, bins=500, density = True, alpha = 0.6, color="blue", label = "Histogram of samples")
-    plt.axvline(loss_canary, color="black", linestyle="--", label="The loss of the canary", linewidth=1)
-    plt.xlabel("Log-perplexity")
-    plt.ylabel("Probability density")
-    plt.title(f"Canary attack {EXPERIMENT_NAME}")
-    plt.legend(loc = "upper left")
-    plt.grid()
-    plt.savefig(os.path.join(dir, "plot.png"), dpi = 300, bbox_inches = "tight")
+    stats = {}
+    stats["location"] = location
+    stats["scale"] = scale
+    stats["shape"] = shape
+    stats["loss"] = loss_canary
+    stats["exposure"] = exposure
+    with open(os.path.join(dir, "stats.json"), "w") as f:
+        json.dump(stats, f, indent = 4)
+    
     logger.info("===== Canary attack done =====")
 
 if __name__ == "__main__":

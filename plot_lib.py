@@ -213,6 +213,14 @@ def avg_10_highest_conf(exp_name, model, dataset_dir, language, example_token_le
     # Finish the wandb run
     wandb.finish()
 
+# Standard colors. These are more than sufficient for now
+def get_colors():
+    return ["blue", "orange", "green", "red"]
+
+# Standard markers. These are more than sufficient for now
+def get_markers():
+    return ["o", "s", "d", "^", "v", "<", ">"]
+
 def set_up_plot(ax, title, xlabel, ylabel):
     ax.set_title(title)
     ax.set_xlabel(xlabel)
@@ -255,13 +263,14 @@ def plot_means_medians(folders: list, base_dir:str, result_dir: str, experiment_
     # initialize the plots
     fig, ax = plt.subplots(1,2,figsize=(16,9))
 
-    colors = ["b", "y", "g", "r"]
-    markers = ["o", "s", "d", "^"]
+    colors = get_colors()
+    markers = get_markers()
+    folders_len_half = (int)(len(folders) / 2)
 
     for i, folder in enumerate(folders):
         # load the results and calculate means and medians and add them to the respective plot
         results_list_dict = torch.load(os.path.join(base_dir, folder, "mia.pt"))
-        plotting_means_medians(ax, results_list_dict, folder, colors[len(markers) // i], markers[i % len(markers)])
+        plotting_means_medians(ax, results_list_dict, folder, colors[i // folders_len_half], markers[i % folders_len_half])
 
     set_up_plot(ax[0], "Means for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
     set_up_plot(ax[1], "Medians for " + experiment_description, "Sentence length (tokenized)", "Perplexity ratio")
