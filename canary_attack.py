@@ -76,9 +76,11 @@ except Exception as e:
 tokenizer = initTokenizer(MODEL_NAME)
 pad_token_id = tokenizer.pad_token_id
 
+# The number of candidate canaries used in the canary sampling
 SAMPLE_SIZE = 1000000
 
-
+# First generates candidate canaries, then tokenizes them and computes their losses.
+# Output: List of losses
 def sample_canaries(prefix: str, suffix: str, prefix_len):
     logger.info("Sampling canary variants")
     digit_amount = len(suffix)
@@ -86,7 +88,8 @@ def sample_canaries(prefix: str, suffix: str, prefix_len):
     number_range = 10**digit_amount - 1
     sample_suffixes = [f"{random.randint(0, number_range):0{digit_amount}}" for i in range(SAMPLE_SIZE)]
     sample_sentences = [prefix + " " + sample_suffix for sample_suffix in sample_suffixes]
-    # Tokenize the sentences. Because the numbers might be split into a different amount of tokens, this is done in batches where every batch has uniform length (without padding/truncation)
+    # Tokenize the sentences. Because the numbers might be split into a different amount of tokens, 
+    # this is done in batches where every batch has uniform length (without padding/truncation)
     logger.info("Tokenizing canary variants")
     tokenized = tokenize_prompts_in_batches(tokenizer, {i: sample_sentences[i] for i in range(len(sample_sentences))}, 1)
     # Now compute the losses per batch
@@ -121,7 +124,7 @@ def main():
     # This logarithm computes with base e
     exposure = -1*math.log(skewnorm.cdf(loss_canary, shape, location, scale))
     
-    # Save the results, plot the distribution
+    # Save the results
     logger.info("Saving results...")
     dir = get_canary_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
     torch.save(sample_losses, os.path.join(dir, "canary-losses.pt"))

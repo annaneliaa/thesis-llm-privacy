@@ -55,7 +55,7 @@ pad_token_id = tokenizer.pad_token_id
 def main():
     logger.info("===== Starting dataset token generation =====")
     dir = get_data_directory(DATASET_DIR, PREPROCESSING, NORMALIZATION, EXAMPLE_TOKEN_LEN)
-    # read the train indices
+    # read the training indices
     with open(os.path.join(dir, DATASET_NAME + "-split_indices.json"), "r") as f:
         train_indices = json.load(f)["train"]
     
@@ -76,7 +76,7 @@ def main():
     if os.path.exists(train_out_file) and os.path.exists(val_out_file):
         print("Files already exist. Skipping computation.")
         return
-    # Tokenize the datasets
+    # Tokenize the datasets, either in batches of not
     if BATCHING:
         logger.info("===== Tokenizing training data in batches =====")
         # Create mapping from ids to strings for training dataset
@@ -88,6 +88,7 @@ def main():
         # this call pads to the longest sequence in the dataset, and truncates to max_length (at most)
         tokenized_train_dataset = tokenizer(train_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
         tokenized_train_dataset["sentence_ids"] = train_indices
+    # Tokenize the validation data set
     tokenized_eval_sentences = tokenizer(val_data, max_length=512, padding=True, truncation=True, return_tensors="pt")
 
     # Save the tokenized train and eval datasets to files

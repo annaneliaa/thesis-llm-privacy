@@ -13,6 +13,6 @@ module load Boost/1.79.0-GCC-11.3.0
 
 source $HOME/thesis-llm-privacy/.env/bin/activate
 
-python ./mia_evaluation.py --config_file exp-configs/EMEA/100/e8/config-125M-nl.json --eval_mode epochs --epochs 8
+python ./mia_evaluation.py --config_file exp-configs/EMEA/100/e8/config-125M-nl.json --eval_mode epoch --epochs 8
 
 deactivate

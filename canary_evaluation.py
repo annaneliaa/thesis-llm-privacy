@@ -5,7 +5,7 @@ import json
 import torch
 import math
 from transformers import set_seed, AutoModelForCausalLM
-from scipy.stats import skewnorm, kstest
+from scipy.stats import skewnorm, kstest, chisquare
 import numpy as np
 import matplotlib.pyplot as plt
 from util_lib import *
@@ -23,7 +23,7 @@ logger.info("Parsing arguments...")
 parser = argparse.ArgumentParser(description="Process config input.")
 parser.add_argument("--config_file", type=str, required=True, help="Path to the configuration file")
 parser.add_argument(
-    "--eval_mode", type=str, required=False, help="Determines what will be evaluated, default (not provided) is evaluation of a single experiment, epochs evaluates the same experiment along different epochs, models compares the finding of different models for the same amount of training epochs"
+    "--eval_mode", type=str, required=False, help="Determines what will be evaluated, default (not provided) is evaluation of a single experiment, insertions evaluates the all experiments in one plot"
 )
 args = parser.parse_args()
 
@@ -55,63 +55,31 @@ with open(args.config_file, "r") as f:
     SEED
 ) = load_constants_from_config(config)
 
-
-# Set default device
-if torch.cuda.is_available():
-    DEFAULT_DEVICE = "cuda"
-elif torch.backends.mps.is_available():
-    DEFAULT_DEVICE = "mps"
-else:
-    DEFAULT_DEVICE = "cpu"
-
-logger.info(f"Default device: {DEFAULT_DEVICE}")
-
 SAMPLE_SIZE = 1000000
 
-try:
-    logger.info("Loading trained model...")
-    MODEL = AutoModelForCausalLM.from_pretrained(get_model_directory(DATASET_DIR, EXPERIMENT_NAME), low_cpu_mem_usage=True, cache_dir=cache_dir)
-    # move model to GPU
-    MODEL.to(DEFAULT_DEVICE)
-    logger.info("Model loaded successfully.")
-except Exception as e:
-    logger.error(f"Error loading models or tokenizer: {e}")
-    raise
-
-tokenizer = initTokenizer(MODEL_NAME)
-pad_token_id = tokenizer.pad_token_id
-
+# Evaluates a single experiment by plotting the sampling, its approximation, and the canary loss.
+# Additionally, performs both a Kolmogorov-Smirnov and a chi-square goodness of fit test
 def evaluate_experiment():
     logger.info(f"Evaluating experiment {EXPERIMENT_NAME}")
     logger.info("Loading data...")
     dir = get_canary_result_directory(ROOT_DIR, DATASET_DIR, EXPERIMENT_NAME)
+    # load the data
     sample_losses = torch.load(os.path.join(dir, "canary-losses.pt"))
-    #with open(os.path.join(dir, "stats.json")) as f:
-        #stats = json.load(f)
-    # TODO this code is temporary:
-    with open(os.path.join(DATASET_DIR, "canary" + f"-{LANGUAGE}.json"), "r") as f:
-        canary = json.load(f)
-    prefix_len = len(tokenizer.encode(canary["prefix"]))
-    # Tokenize the canary, then calculate its loss
-    tokenized_canary = tokenizer([canary["prefix"] + " " + canary["suffix"]], max_length=512, padding=True, truncation=True, return_tensors="pt")
-    logger.info("Calculating loss for canary")
-    loss_canary = compute_losses_per_batch(MODEL, [tokenized_canary], DEFAULT_DEVICE, BATCH_SIZE, prefix_len)
-    loss_canary = loss_canary[0][0]*(len(tokenized_canary["input_ids"][0]) - prefix_len)
+    with open(os.path.join(dir, "stats.json")) as f:
+        stats = json.load(f)
+    loss_canary = stats["loss"]
+    shape = stats["shape"]
+    location = stats["location"]
+    scale = stats["scale"]
     
-    # Calculate the exposure of the actual canary based on the approximated distribution and the loss of the canary
-    logger.info("Calculating canary exposure")
-    # End of temporary code
-    # Fit the data into a skew-normal distribution, and create the data for plotting
-    shape, location, scale = skewnorm.fit(sample_losses)
     x = np.linspace(location - 5*scale, location + 5*scale, 500)
     pdf = skewnorm.pdf(x, shape, location, scale)
-    # This logarithm computes with base e
-    exposure = -1*math.log(skewnorm.cdf(loss_canary, shape, location, scale))
     # Plot the results
     logger.info("Plotting exposure")
     plt.figure(figsize=(8, 6))
     plt.plot(x, pdf, label = "PDF", color = "orange")
-    plt.hist(sample_losses, bins=500, density = True, alpha = 0.6, color="blue", label = "Histogram of samples")
+    bin_amt = (int) (math.sqrt(SAMPLE_SIZE))
+    plt.hist(sample_losses, bins=bin_amt, density = True, alpha = 0.6, color="blue", label = "Histogram of samples")
     plt.axvline(loss_canary, color="black", linestyle="--", label="The loss of the canary", linewidth=1)
     plt.xlabel("Log-perplexity")
     plt.ylabel("Probability density")
@@ -122,62 +90,87 @@ def evaluate_experiment():
 
     # Perform Kolmogorov-Smirnov goodness of fit test
     logger.info("Performing Kolmogorov-Smirnov goodness of fit test")
-    cdf = lambda x: skewnorm(x, shape, location, scale)
+    params = (shape, location, scale)
+    cdf = lambda x: skewnorm.cdf(x, *params)
     _, p_ks = kstest(sample_losses, cdf)
+
+    # Perform chi-square goodness of fit test
+    logger.info("Performing chi-square goodness of fit test")
+    observed, bin_edges = np.histogram(sample_losses, bins=bin_amt)
+    expected = np.zeros_like(observed, dtype=float)
+    for i in range(bin_amt):
+        low = skewnorm.cdf(bin_edges[i], shape, loc=location, scale=scale)
+        high = skewnorm.cdf(bin_edges[i+1], shape, loc=location, scale=scale)
+        expected[i] = (high-low) * len(sample_losses)
+    # Normalize expected counts to match the sum of observed counts
+    expected = expected * (observed.sum() / expected.sum())
+    _, p_chi = chisquare(f_obs=observed, f_exp=expected)
 
     # Save the parameters in json format for easy usability
     logger.info("Saving results")
-    stats = {}
-    stats["location"] = location
-    stats["scale"] = scale
-    stats["shape"] = shape
-    stats["loss"] = loss_canary
-    stats["exposure"] = exposure
     stats["p_ks"] = p_ks
+    stats["p_chi"] = p_chi
     with open(os.path.join(dir, "stats.json"), "w") as f:
         json.dump(stats, f, indent = 4)
-    
+
+# Evaluates all experiments
 def evaluate_insertions():
     logger.info("Evaluating all canary attacks")
-    dir = get_canary_result_directory(ROOT_DIR, DATASET_DIR, "").strip("/")
+    # Get all the folders
+    dir = get_canary_result_directory(ROOT_DIR, DATASET_DIR, "")
     experiment_names = ["en-100-nat-1.3B-can-I", "en-100-nat-125M-can-I", "en-100-nat-2.7B-can-I", "nl-100-nat-1.3B-can-I", "nl-100-nat-125M-can-I", "nl-100-nat-2.7B-can-I"]
-    markers = get_colors()
-    colors = get_markers()
     folders_all = sorted(os.listdir(dir))
-    x = [], y_exposure = [], y_p_ks = []
+    x, y_exposure, y_loss, y_p_ks, y_p_chi = [], [], [], [], []
     logger.info("Retrieving data")
+    # Read all data necessary: The number of insertions, exposure, loss, and test statistics
     for i,experiment_name in enumerate(experiment_names):
+        # Get all folders corresponding to the experiment
         folders_experiment = [f for f in folders_all if f.startswith(experiment_name)]
-        insertions = []
-        exposure = []
-        p_ks = []
+        insertions, exposure, loss, p_ks, p_chi = [], [], [], [], []
+        # For every folder, retrieve the data
         for folder in folders_experiment:
             name = os.path.basename(folder.strip("/"))
             insertions.append(int(name[len(experiment_name):]))
-            with open(os.path.join(dir, "stats.json")) as f:
+            with open(os.path.join(dir, folder, "stats.json")) as f:
                 stats = json.load(f)
             exposure.append(stats["exposure"])
+            loss.append(stats["loss"])
             p_ks.append(stats["p_ks"])
-        x[i] = insertions
-        y_exposure[i] = exposure
-        y_p_ks[i] = p_ks
+            p_chi.append(stats["p_chi"])
+        # Sort the entries based on the number of insertions
+        sorted_x = np.argsort(insertions)
+        x.append(np.array(insertions)[sorted_x])
+        y_exposure.append(np.array(exposure)[sorted_x])
+        y_loss.append(np.array(loss)[sorted_x])
+        y_p_ks.append(np.array(p_ks)[sorted_x])
+        y_p_chi.append(np.array(p_chi)[sorted_x])
     
     logger.info("Plotting results")
-    # Plot the exposure values
-    experiments_len_half = (int) (len(experiment_names / 2))
-    fig, ax = plt.subplots(1,1,figsize=(8,6))
+    colors = get_colors()
+    markers = get_markers()
+    # Plot the exposure and loss values
+    experiments_len_half = (int) (len(experiment_names) / 2)
+    fig, ax = plt.subplots(1,2,figsize=(16,6))
+    plt.subplots_adjust(right=0.75)
     for i, experiment_name in enumerate(experiment_names):
-        ax[0].plot(x[i], y_exposure[i], label = experiment_name, color = colors[i // experiments_len_half], marker = markers[i % experiments_len_half])
+        ax[0].plot(x[i], y_exposure[i], label = experiment_name[:-6], color = colors[i // experiments_len_half], marker = markers[i % experiments_len_half])
+        ax[1].plot(x[i], y_loss[i], label = experiment_name[:-6], color = colors[i // experiments_len_half], marker = markers[i % experiments_len_half])
     set_up_plot(ax[0], "Exposure of canary attacks", "Number of insertions", "Exposure")
-    fig.savefig(os.path.join(dir, "plot_exposures.png"))
+    set_up_plot(ax[1], "Loss of canaries", "Number of insertions", "Loss")
+    ax[0].legend(loc="upper left", bbox_to_anchor=(1, 0))
+    ax[1].legend(loc="upper left", bbox_to_anchor=(1, 1))
+    fig.savefig(os.path.join(dir, "plot_exposures_losses.png"))
     # Plot the goodness of fit data
-    fig, ax = plt.subplots(1,1,figsize=(8,6))
+    fig, ax = plt.subplots(1,2,figsize=(16,6))
     for i, experiment_name in enumerate(experiment_names):
-        ax[0].plot(x[i], y_p_ks[i], label = experiment_name, color = colors[i // experiments_len_half], marker = markers[i % experiments_len_half])
+        ax[0].plot(x[i], y_p_ks[i], label = experiment_name[:-6], color = colors[i // experiments_len_half], marker = markers[i % experiments_len_half])
+        ax[1].plot(x[i], y_p_chi[i], label = experiment_name[:-6], color = colors[i // experiments_len_half], marker = markers[i % experiments_len_half])
     confidence_level = 0.05
-    ax[0].axvline(x = confidence_level, color = "black", linestyle = "--", label = "Confidence level")
+    ax[0].axhline(y = confidence_level, color = "black", linestyle = "--", label = "Confidence level")
+    ax[1].axhline(y = confidence_level, color = "black", linestyle = "--", label = "Confidence level")
     set_up_plot(ax[0], "P-values of Kolmogorov-Smirnov tests", "Number of insertions", "K-S p-value")
-    fig.savefig(os.path.join(dir, "plot_K-S.png"))
+    set_up_plot(ax[1], "P-values of Chi-square tests", "Number of insertions", "Chi^2 p-value")
+    fig.savefig(os.path.join(dir, "plot_tests.png"))
 
 def main():
     logger.info("===== Starting canary evaluation =====")
@@ -187,7 +180,7 @@ def main():
         evaluate_insertions()
     else:
         logger.info("Unknown evaluation mode. No evaluation")
-    
+
     logger.info("===== Canary evaluation done =====")
 
 if __name__ == "__main__":

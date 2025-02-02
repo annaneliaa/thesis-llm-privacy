@@ -15,5 +15,7 @@ source $HOME/thesis-llm-privacy/.env/bin/activate
 
 python ./trainer.py --config_file exp-configs/EMEA/canary/i1/config-2.7B-en.json --epochs 1
 python ./canary_attack.py --config_file exp-configs/EMEA/canary/i1/config-2.7B-en.json
+python ./canary_evaluation.py --config_file exp-configs/EMEA/canary/i1/config-2.7B-en.json
+
 
 deactivate

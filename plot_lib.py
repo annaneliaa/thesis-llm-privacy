@@ -221,47 +221,47 @@ def get_colors():
 def get_markers():
     return ["o", "s", "d", "^", "v", "<", ">"]
 
+# Set up a subplot
 def set_up_plot(ax, title, xlabel, ylabel):
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend(loc="upper right")
+    ax.grid(True)
     return ax
 
 # Make a scatter plot mapping the loss ratio to the sentence lengths
 def plot_results_scatter(results: list, sentence_lengths: list, means: list, medians: list, dir: str, experiment_name: str):
     percentiles = [75,90,99]
-    fig, ax = plt.subplots(1,2,figsize=(8,6))
-    set_up_plot(ax[0], f"Membership inference attack {experiment_name}", "Sentence length (tokenized)", "Perplexity ratio")
-    ax[0].scatter(sentence_lengths, results, c='blue', s=10, alpha=0.7)
-    ax[0].plot(x_coord, means, label = "Mean perplexity ratio per batch", color = "red")
-    ax[0].plot(x_coord, medians, label = "Median perplexity ratio per batch", color = "lightcoral")
-    ax[0].grid(True)
+    fig, ax = plt.subplots(figsize=(8,6))
+    ax.scatter(sentence_lengths, results, c='blue', s=10, alpha=0.7)
+    ax.plot(x_coord, means, label = "Mean perplexity ratio per batch", color = "red")
+    ax.plot(x_coord, medians, label = "Median perplexity ratio per batch", color = "lightcoral")
+    set_up_plot(ax, f"Membership inference attack {experiment_name}", "Sentence length (tokenized)", "Perplexity ratio")
     plt.savefig(os.path.join(dir, "plot.png"), dpi = 300, bbox_inches = "tight")
     # Make a plot with only the lower 90 percentile, and with the upper 10 percentile
     _, top_init = plt.ylim()
     for percentile in percentiles:
         p = np.percentile(results, percentile)
-        ax[0].ylim(bottom=p, top = top_init)
+        ax.ylim(bottom=p, top = top_init)
         plt.title(f"Membership inference attack {experiment_name}: Results in the highest {100-percentile} percentile")
         plt.savefig(os.path.join(dir, f"plot_over_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
-        ax[0].ylim(bottom = 0, top=p)
+        ax.ylim(bottom = 0, top=p)
         plt.title(f"Membership inference attack {experiment_name}: Results in the lower {percentile} percentile")
         plt.savefig(os.path.join(dir, f"plot_under_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
 
 # TODO Change naming
 def plotting_means_medians(ax, data_list_dict, experiment_description, color, marker = "o"):
     means = [np.mean(list(result.values())) for result in data_list_dict]
-    # TODO add other parameters to plotting (color)
     ax[0].plot(x_coord, means, label = experiment_description, color = color, marker = marker)
     medians = [np.median(list(result.values())) for result in data_list_dict]
     ax[1].plot(x_coord, medians, label = experiment_description, color = color, marker = marker)
     return ax
 
-
+# Plots the means and medians per batch of the results in the "mia.pt" files for all folders passed
 def plot_means_medians(folders: list, base_dir:str, result_dir: str, experiment_description):
     # initialize the plots
-    fig, ax = plt.subplots(1,2,figsize=(16,9))
+    fig, ax = plt.subplots(1,2,figsize=(16,6))
 
     colors = get_colors()
     markers = get_markers()

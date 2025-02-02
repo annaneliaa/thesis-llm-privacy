@@ -2,7 +2,7 @@
 #SBATCH --time=01:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --job-name=evaluation-epochs-1
+#SBATCH --job-name=evaluation-canary
 #SBATCH --mem=8000
 #SBATCH --gpus-per-node=a100:1
 
@@ -13,6 +13,7 @@ module load Boost/1.79.0-GCC-11.3.0
 
 source $HOME/thesis-llm-privacy/.env/bin/activate
 
-python ./mia_evaluation.py --config_file exp-configs/EMEA/100/e1/config-125M-nl.json --eval_mode epoch --epochs 1
+python ./canary_evaluation.py --config_file exp-configs/EMEA/canary/i8/config-2.7B-en.json --eval_mode insertions
+
 
 deactivate
