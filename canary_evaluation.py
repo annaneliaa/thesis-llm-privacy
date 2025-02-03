@@ -151,13 +151,13 @@ def evaluate_insertions():
     # Plot the exposure and loss values
     experiments_len_half = (int) (len(experiment_names) / 2)
     fig, ax = plt.subplots(1,2,figsize=(16,6))
-    plt.subplots_adjust(right=0.75)
+    plt.subplots_adjust(right=0.8)
     for i, experiment_name in enumerate(experiment_names):
         ax[0].plot(x[i], y_exposure[i], label = experiment_name[:-6], color = colors[i // experiments_len_half], marker = markers[i % experiments_len_half])
         ax[1].plot(x[i], y_loss[i], label = experiment_name[:-6], color = colors[i // experiments_len_half], marker = markers[i % experiments_len_half])
     set_up_plot(ax[0], "Exposure of canary attacks", "Number of insertions", "Exposure")
     set_up_plot(ax[1], "Loss of canaries", "Number of insertions", "Loss")
-    ax[0].legend(loc="upper left", bbox_to_anchor=(1, 0))
+    ax[0].legend(loc="upper right", bbox_to_anchor=(0, 1))
     ax[1].legend(loc="upper left", bbox_to_anchor=(1, 1))
     fig.savefig(os.path.join(dir, "plot_exposures_losses.png"))
     # Plot the goodness of fit data

@@ -143,7 +143,7 @@ def evaluate_experiment():
     means = [np.mean(list(result.values())) for result in results_list_dict]
     medians = [np.median(list(result.values())) for result in results_list_dict]
     # Plot the results in a scatter plot, plot the means and medians per batch
-    plot_results_scatter(results_list, sentence_lengths, means, medians, res_dir)
+    plot_results_scatter(results_list, sentence_lengths, means, medians, res_dir, EXPERIMENT_NAME)
     
     # analyze stats for each batch individually, no plotting done for every batch
     stats_file = os.path.join(res_dir, "stats.txt")
@@ -201,9 +201,9 @@ def evaluate_model():
     markers = get_markers()
     folders_len_half = (int)(len(folders) / 2)
     # for the folders for both languages do
-    for folders_spec in folders_lang:
+    for j,folders_spec in enumerate(folders_lang):
         result_0 = torch.load(os.path.join(dir, folders_spec[0], "mia.pt"))
-        ax = plotting_means_medians(ax, result_0, f"untrained model / {folders_spec[0]}", colors[0], markers[0])
+        ax = plotting_means_medians(ax, result_0, f"untrained model / {folders_spec[0]}", colors[j], markers[0])
         for i in range(1, len(folders_spec)):
             # load two results (remember, the folders are sorted), and compute their ratio. e.g. if results are for e1 and e2, we get the ratio e1/e2
             results1 = torch.load(os.path.join(dir, folders_spec[i-1], "mia.pt"))
@@ -213,7 +213,7 @@ def evaluate_model():
                 result_ratio.append({j: results1[k][j] / results2[k][j] for j in results1[k].keys()})
             
             # Now compute and plot the means and medians
-            ax = plotting_means_medians(ax, result_ratio, f"{folders_spec[i-1]} / {folders_spec[i]}", colors[i // folders_len_half], markers[i % folders_len_half])
+            ax = plotting_means_medians(ax, result_ratio, f"{folders_spec[i-1]} / {folders_spec[i]}", colors[j], markers[i % folders_len_half])
 
     set_up_plot(ax[0], "Means of perplexity ratios comparing different epochs of training", "Sentence length (tokenized)", "Perplexity ratio")
     set_up_plot(ax[1], "Medians of perplexity ratios comparing different epochs of training ", "Sentence length (tokenized)", "Perplexity ratio")

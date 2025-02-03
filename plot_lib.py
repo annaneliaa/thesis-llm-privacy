@@ -243,10 +243,10 @@ def plot_results_scatter(results: list, sentence_lengths: list, means: list, med
     _, top_init = plt.ylim()
     for percentile in percentiles:
         p = np.percentile(results, percentile)
-        ax.ylim(bottom=p, top = top_init)
+        ax.set_ylim(bottom=p, top = top_init)
         plt.title(f"Membership inference attack {experiment_name}: Results in the highest {100-percentile} percentile")
         plt.savefig(os.path.join(dir, f"plot_over_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
-        ax.ylim(bottom = 0, top=p)
+        ax.set_ylim(bottom = 0, top=p)
         plt.title(f"Membership inference attack {experiment_name}: Results in the lower {percentile} percentile")
         plt.savefig(os.path.join(dir, f"plot_under_p{percentile}.png"), dpi = 300, bbox_inches = "tight")
 
