@@ -1,0 +1,226 @@
+Mean: 19.37869142068978
+Median: 8.384768137361437
+Standard deviation: 30.89759059983068
+25, 50, 75, 90, and 99 Percentiles: 5.1423708788159495 8.384768137361437 18.159381181242008 52.770941786057676 143.66438555983834
+Percentage of sentences with ratio greater than 1: 0.9989694584972831
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 181.04145587408655
+Median: 170.0
+Standard deviation: 75.27434320102618
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 144.988056206089
+Median: 143.0
+Standard deviation: 47.255632821089016
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 96.8407494145199
+Median: 93.5
+Standard deviation: 22.5418808324828
+
+---- Stats for batch 0 ----
+Mean: 14.854778930853076
+Median: 4.922275220225542
+Standard deviation: 137.01709415583997
+25, 50, 75, 90, and 99 Percentiles: 2.2973471888522323 4.922275220225542 9.559152006838511 23.627671360328165 81.06435027347504
+Percentage of sentences with ratio greater than 1: 0.9473684210526315
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 32.90643274853801
+Median: 35.0
+Standard deviation: 13.455045614711977
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 29.782608695652176
+Median: 33.0
+Standard deviation: 14.641670554415603
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 31.666666666666668
+Median: 38.5
+Standard deviation: 17.42029467795154
+
+---- Stats for batch 1 ----
+Mean: 41.49346828129174
+Median: 12.062518508062206
+Standard deviation: 55.126622821280705
+25, 50, 75, 90, and 99 Percentiles: 5.570295063837982 12.062518508062206 59.12399432152323 137.44172755106587 208.16969388598028
+Percentage of sentences with ratio greater than 1: 0.9980694980694981
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 83.71299871299871
+Median: 86.0
+Standard deviation: 11.638966830861271
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 84.2572347266881
+Median: 87.0
+Standard deviation: 11.329271966504752
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 86.55555555555556
+Median: 86.0
+Standard deviation: 7.619537234652173
+
+---- Stats for batch 2 ----
+Mean: 45.1000818224072
+Median: 28.99293971871054
+Standard deviation: 43.96257838691361
+25, 50, 75, 90, and 99 Percentiles: 7.681659869923296 28.99293971871054 73.19473009353948 111.57508260320185 167.4514489571589
+Percentage of sentences with ratio greater than 1: 0.997563239730796
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 126.12529002320186
+Median: 127.0
+Standard deviation: 14.179316080133818
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 122.67749419953596
+Median: 121.0
+Standard deviation: 14.180614574774857
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 111.77011494252874
+Median: 107.0
+Standard deviation: 10.505481569632607
+
+---- Stats for batch 3 ----
+Mean: 35.85562378640263
+Median: 25.55966425694937
+Standard deviation: 30.45279219231766
+25, 50, 75, 90, and 99 Percentiles: 11.615232545921488 25.55966425694937 55.04416830046233 82.50495945708595 121.06180747206072
+Percentage of sentences with ratio greater than 1: 0.9993382491964454
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 171.79017013232513
+Median: 170.0
+Standard deviation: 13.961782508357626
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 171.1086956521739
+Median: 170.0
+Standard deviation: 13.778573991160911
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 168.49056603773585
+Median: 168.5
+Standard deviation: 12.987353029935273
+
+---- Stats for batch 4 ----
+Mean: 22.52043096925516
+Median: 16.6255155522951
+Standard deviation: 19.736376256421316
+25, 50, 75, 90, and 99 Percentiles: 8.939424131885232 16.6255155522951 28.607055160390757 51.15723928547689 89.76079665770767
+Percentage of sentences with ratio greater than 1: 0.9998820337383508
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 220.58423784804154
+Median: 218.0
+Standard deviation: 13.621081421311192
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 217.94693396226415
+Median: 216.0
+Standard deviation: 12.72423952855531
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 211.16470588235293
+Median: 207.0
+Standard deviation: 10.055615653079874
+
+---- Stats for batch 5 ----
+Mean: 14.05857915331451
+Median: 11.230072834320199
+Standard deviation: 11.096858465228587
+25, 50, 75, 90, and 99 Percentiles: 6.642011510914809 11.230072834320199 17.49824363688512 27.437747935551677 55.91007712979995
+Percentage of sentences with ratio greater than 1: 0.9997247832668226
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 273.0269675288938
+Median: 272.0
+Standard deviation: 14.143725718414283
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 271.283356258597
+Median: 270.0
+Standard deviation: 14.043107022155562
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 268.26027397260276
+Median: 265.0
+Standard deviation: 10.614491400989229
+
+---- Stats for batch 6 ----
+Mean: 10.531795966449407
+Median: 8.75923471907468
+Standard deviation: 7.583073587043748
+25, 50, 75, 90, and 99 Percentiles: 5.738405167620338 8.75923471907468 12.939427459962175 18.81906068563007 39.978065745021645
+Percentage of sentences with ratio greater than 1: 0.9997104806022004
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 323.21250723798494
+Median: 322.0
+Standard deviation: 13.937183396289901
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 321.589001447178
+Median: 319.0
+Standard deviation: 13.557567885592963
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 321.24285714285713
+Median: 318.0
+Standard deviation: 13.687438136222543
+
+---- Stats for batch 7 ----
+Mean: 8.65381763689897
+Median: 7.320717128820481
+Standard deviation: 6.1754990974510555
+25, 50, 75, 90, and 99 Percentiles: 5.199938943380571 7.320717128820481 10.38446833510827 14.081382493911711 31.023152049994813
+Percentage of sentences with ratio greater than 1: 1.0
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 373.67620865139946
+Median: 373.0
+Standard deviation: 14.20936006864879
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 371.6931637519873
+Median: 370.0
+Standard deviation: 14.004650081024243
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 366.95238095238096
+Median: 365.0
+Standard deviation: 10.887146270582143
+
+---- Stats for batch 8 ----
+Mean: 7.4027969680326065
+Median: 6.5527814438743945
+Standard deviation: 3.7726630144358095
+25, 50, 75, 90, and 99 Percentiles: 4.842162183452563 6.5527814438743945 9.1324261825028 12.110932800708015 20.004181045220363
+Percentage of sentences with ratio greater than 1: 0.9996433030140895
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 422.77603423680455
+Median: 421.0
+Standard deviation: 14.167088831523683
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 421.60071301247774
+Median: 420.0
+Standard deviation: 13.411652696895112
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 419.7894736842105
+Median: 417.0
+Standard deviation: 13.957508018095062
+
+---- Stats for batch 9 ----
+Mean: 6.894237537798542
+Median: 5.9729530831213316
+Standard deviation: 3.6491911940273822
+25, 50, 75, 90, and 99 Percentiles: 4.607629364762177 5.9729530831213316 8.230232401895583 11.00958524444306 21.131469440312877
+Percentage of sentences with ratio greater than 1: 1.0
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 473.9201205727204
+Median: 473.0
+Standard deviation: 14.320600103199865
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 473.73345935727787
+Median: 474.0
+Standard deviation: 14.198499291790315
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 476.6296296296296
+Median: 474.0
+Standard deviation: 14.607178767932938
+
+---- Stats for batch 10 ----
+Mean: 6.19377304896671
+Median: 5.47617785537968
+Standard deviation: 2.9690179530985708
+25, 50, 75, 90, and 99 Percentiles: 4.249675685775757 5.47617785537968 7.390070020080398 9.913769544034784 17.14296085118088
+Percentage of sentences with ratio greater than 1: 0.9997428512651718
+---- Stats for sentence length of upper 25 percentile in perplexity ratio ----
+Mean: 511.61172839506173
+Median: 512.0
+Standard deviation: 1.6890584953872922
+---- Stats for sentence length of upper 10 percentile in perplexity ratio ----
+Mean: 511.58560411311055
+Median: 512.0
+Standard deviation: 1.747425636626243
+---- Stats for sentence length of upper 1 percentile in perplexity ratio ----
+Mean: 511.15384615384613
+Median: 512.0
+Standard deviation: 2.545852312454105
