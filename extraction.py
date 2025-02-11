@@ -1,7 +1,7 @@
 import logging
 from IPython.display import display
 import os
-from typing import Tuple, Union
+from typing import Tuple
 import numpy as np
 import torch
 import json
@@ -53,7 +53,8 @@ with open(args.config_file, 'r') as f:
     BATCH_SIZE, 
     MODEL_NAME, 
     TRAIN_FILE, 
-    VAL_FILE, 
+    VAL_FILE,
+    NPY_ARRAYS_BASE,
     VAL_SPLIT, 
     SEED
 ) = load_constants_from_config(config)
@@ -82,14 +83,17 @@ if args.cache_dir:
     cache_dir = args.cache_dir
 else:
     # Get cache dir from .env
-    cache_dir = "/scratch/s4079876"
+    cache_dir = "/scratch/s6153712"
 
 # Load model and tokenizer
 try:
     logger.info("Loading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=cache_dir)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=cache_dir, padding_side='left')
     logger.info("Loading model...")
     MODEL = AutoModelForCausalLM.from_pretrained(MODEL_NAME, low_cpu_mem_usage=True, cache_dir=cache_dir)
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+
     # move model to GPU
     MODEL.to(DEFAULT_DEVICE)
     logger.info("Model loaded successfully.")
@@ -108,9 +112,14 @@ def generate_for_prompts(prompts: np.ndarray, batch_size: int, suffix_len: int, 
     losses = []
     # Include preprefix length in generation length
     generation_len = preprefix_len + prefix_len + suffix_len
+    
+    vocab_size = tokenizer.vocab_size
+    if (prompts >= vocab_size).any():
+        logger.warning("Some index were outside the vocabulary. Fixing it...")
+        prompts = np.clip(prompts, 0, vocab_size - 1)
+    
     for i, off in enumerate(range(0, len(prompts), batch_size)):
         prompt_batch = prompts[off: off + batch_size]
-        # logger.info(f"Generating for batch ID {i:05} of size {len(prompt_batch):04}")
         prompt_batch = np.stack(prompt_batch, axis=0)
         input_ids = torch.tensor(prompt_batch, dtype=torch.int64).to(DEFAULT_DEVICE)
         with torch.no_grad():
@@ -147,6 +156,7 @@ def write_array(file_path: str, array: np.ndarray, unique_id):
 # and concatenate them with the prompts
 def load_prompts(dir_: str, file_name: str, preprefix_len: int, split: int) -> np.ndarray:
     """Loads prompts from the file pointed to `dir_` and `file_name`."""
+    logger.info(f"dir_: {dir_}, file_name: {file_name}")
     prompts = np.load(os.path.join(dir_, file_name)).astype(np.int64)
     
     if preprefix_len == 0:
@@ -169,10 +179,12 @@ def main():
     os.makedirs(generations_base, exist_ok=True)
     losses_base = os.path.join(experiment_base, "losses")
     os.makedirs(losses_base, exist_ok=True)
-    prompts_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), HGmodel)
-
+    prompts_base = NPY_ARRAYS_BASE
+    logger.info(f"prompts_base: {prompts_base}")
     logger.info("Loading prompts from numpy file")
     prompts = load_prompts(prompts_base, SPLIT + "_prefix.npy", PREPREFIX_LEN, SPLIT)
+    print(prompts.shape)
+    print(prompts)
 
     # all_generations, all_losses = [], []
 

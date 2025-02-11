@@ -1,0 +1,23 @@
+{
+    "root_dir": "tmp/",
+    "dataset_dir": "context/Europarl/context",
+    "source_dir": "",
+    "dataset_name": "Europarl.el-es-100",
+    "experiment_name": "el-100-100-1.3B", 
+    "num_trials": 100,
+    "language": "el",
+    "split": "train",
+    "suffix_len": 50,
+    "prefix_len": 50,
+    "example_token_len": 100,
+    "preprefix_len": 0,
+    "source_file": "train_dataset.npy",
+    "batch_size": 64,
+    "model_name": "EleutherAI/gpt-neo-1.3B",
+    "train_file": "/scratch/s6153712/llm-privacy/short-programming-llm-privacy/datasets/Europarl/100/train-el.txt",
+    "validation_file": "/scratch/s6153712/llm-privacy/short-programming-llm-privacy/datasets/Europarl/100/validation-el.txt",
+    "npy_arrays_base": "/scratch/s6153712/llm-privacy/short-programming-llm-privacy/datasets/context/Europarl/context/el/100/EleutherAI/gpt-neo-1.3B",
+    "validation_split_percentage": 0.1,
+    "seed": 42,
+    "num_trial": 50
+}

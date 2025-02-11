@@ -38,7 +38,7 @@ EXAMPLE_TOKEN_LEN = config["example_token_len"]
 
 # For dataprocessing we use the GPT-2 tokenizer
 MODEL_NAME = "gpt2"
-languages = ["en", "nl"]
+languages = ["es", "el"]
 
 # Load tokenizer
 logger.info("Loading tokenizer...")
@@ -49,17 +49,17 @@ except Exception as e:
     raise e
 
 def main():
-    # Input: Two parallel datasets where each line is a sentence, in english and dutch (or LANG1 and LANG2)
+    # Input: Two parallel datasets where each line is a sentence, in spanish and greek (or LANG1 and LANG2)
     # This script will process the data and save it in a format that can be used by the model
     # The data will be tokenized to count the number of tokens in each sentence
     # Each sentence is assigned an example ID
-    # We balance the English and Dutch datasets by only keeping sentences that are at least the desired token length in both languages, and also exist in both sets
+    # We balance the Spanish and Greek datasets by only keeping sentences that are at least the desired token length in both languages, and also exist in both sets
     # Output: A JSONL version of both datasets, aligned such that the set of example IDs is the same for both languages
 
     logger.info("==== Sarting data processing script ====")
     logger.info("This may take a while depending on the size of the dataset...")
-    # Load the datasets
-    dataset_base = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME)
+    # Load the datasets (deleted the /100 part)
+    dataset_base = os.path.join(DATASET_DIR, DATASET_NAME)
 
     # Count the number of tokens in each sentence for both datasets
     # Count the number of sentences that are at least the desired token length

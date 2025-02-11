@@ -5,7 +5,7 @@ import numpy as np
 import statistics
 import matplotlib.pyplot as plt
 
-def plot_max_BLEU(exp_name, model, dataset_dir, language, example_token_len, prefix_len, num_trials):
+def plot_max_BLEU(exp_name, dataset_dir, language):
     # wandb_key = os.getenv('WANDB_API_KEY')
     # wandb.login(key=wandb_key)
 
@@ -23,7 +23,7 @@ def plot_max_BLEU(exp_name, model, dataset_dir, language, example_token_len, pre
     #     },
     # )
 
-    path = os.path.join("tmp", dataset_dir, language, exp_name, "bleu_scores/sorted_compl_bleu_scores.jsonl")
+    path = os.path.join("tmp", dataset_dir, language, exp_name, "bleu_scores2", "complete_bleu_scores.jsonl")
     print(path)
     # Load JSON data
     data = []
@@ -86,7 +86,7 @@ def avg_10_highest_score(exp_name, model, dataset_dir, language, example_token_l
         },
     )
 
-    path = os.path.join("tmp", dataset_dir, language, exp_name, "bleu_scores/sorted_compl_" + score_type + "_scores.jsonl")
+    path = os.path.join("tmp", dataset_dir, language, exp_name, "bleu_scores/complete_" + score_type + "_scores.jsonl")
     # Load JSON data
     data = []
     with open(path, 'r') as file:
@@ -109,7 +109,7 @@ def avg_10_highest_score(exp_name, model, dataset_dir, language, example_token_l
 
     ax.set_xlabel('exid')
     ax.set_ylabel('Avg. Score')
-    ax.set_title(f'Average of 10 highest {score_type} Scores per exid for ' + exp_name + ' - ' + dataset_dir)
+    ax.set_title(f'Average of 10 highest {score_type} Scores per exid for es--100-2.7B - ' + dataset_dir)
     ax.legend()
     ax.grid(True)
 

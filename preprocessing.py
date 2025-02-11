@@ -40,7 +40,7 @@ EXAMPLE_TOKEN_LEN = config["example_token_len"]
 
 # For dataprocessing we use the GPT-2 tokenizer
 MODEL_NAME = "gpt2"
-languages = ["en", "nl"]
+languages = ["es", "el"]
 
 # Load tokenizer
 logger.info("Loading tokenizer...")
@@ -51,7 +51,7 @@ except Exception as e:
     raise e
 
 def main():
-    # Input: Two parallel datasets where each line is a sentence, in english and dutch (or LANG1 and LANG2)
+    # Input: Two parallel datasets where each line is a sentence, in spanish and greek (or LANG1 and LANG2)
     # Assumption: the datasets are aligned, and will be used to train a model
     # To increase the number of long sentences in the dataset, we concatenate sentences < desired token length
     # Sentences that are long enough will not be concatenated
@@ -62,9 +62,9 @@ def main():
     logger.info("This may take a while depending on the size of the dataset...")
 
     # Load the datasets
-    # e.g. dataset_base = "europarl/europarl-v7.nl-en"
+    # e.g. dataset_base = "europarl/europarl-v7.el-es"
     dataset_base = os.path.join(config["dataset_dir"], config["dataset_name"])
-    # e.g. dataset_subdir = "europarl/100/europarl-v7.nl-en"
+    # e.g. dataset_subdir = "europarl/100/europarl-v7.el-es"
     dataset_subdir = os.path.join(config["dataset_dir"], str(EXAMPLE_TOKEN_LEN), config["dataset_name"])
     # Count the number of tokens in each sentence for both datasets
     # e.g. csv_output_file_pattern = "datasets/europarl/csv/100"

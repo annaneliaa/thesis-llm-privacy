@@ -2,8 +2,8 @@ import xml.etree.ElementTree as ET
 import os
 
 # Input and output file paths
-input_file = "ECB/ecb-en.xml"
-output_file = "ECB/extracted/ecb_en.txt"
+input_file = "ECB/ecb-es.xml"
+output_file = "ECB/extracted/ecb_es.txt"
 
 os.makedirs(os.path.join("ECB/extracted", output_file), exist_ok=True)
 

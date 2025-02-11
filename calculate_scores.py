@@ -48,7 +48,8 @@ with open(args.config_file, "r") as f:
     BATCH_SIZE, 
     MODEL_NAME, 
     TRAIN_FILE, 
-    VAL_FILE, 
+    VAL_FILE,
+    NPY_ARRAYS_BASE,
     VAL_SPLIT, 
     SEED
     ) = load_constants_from_config(config)
@@ -72,7 +73,7 @@ def main():
 
     logger.info("===== Preparatory steps... =====")
     np_dataset_base = os.path.join(
-        SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), MODEL_NAME
+        "./datasets", SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), MODEL_NAME
     )
 
     logger.info("===== Decoding original preprefixes, prefixes & suffixes =====")
@@ -95,7 +96,11 @@ def main():
         #     exids = split_indices["train"]
 
         # Fix for clashes in exids encountered after experiments
-        exids_file = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
+        print(f"DATASET_DIR: {DATASET_DIR}")
+        print(f"LANGUAGE: {LANGUAGE}")
+        print(f"EXAMPLE_TOKEN_LEN: {EXAMPLE_TOKEN_LEN}")
+        exids_file = os.path.join("./datasets", DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), "prompt-train_dataset-exids-intersect.json")
+        print(exids_file)
         logger.info(f"Loading exids from {exids_file}")
         with open(exids_file, "r") as f:
             exids = json.load(f)
@@ -144,14 +149,14 @@ def main():
     logger.info("Filtered suffixes to only include exids in the exids list")
     
     # filtering suffixes as fix for the exid clash encountered. furthermore this code is not needed
-    prompt_train_dataset_suffixes = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), f"prompt-train_dataset_suffixes-{LANGUAGE}.jsonl")
+    # prompt_train_dataset_suffixes = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), f"prompt-train_dataset_suffixes-{LANGUAGE}.jsonl")
     # save for checking
-    with open(prompt_train_dataset_suffixes, 'w') as f:
-            for line in suffix_lines:
-                json.dump(line, f, ensure_ascii=False)
-                f.write('\n')
+    # with open(prompt_train_dataset_suffixes, 'w') as f:
+            # for line in suffix_lines:
+                # json.dump(line, f, ensure_ascii=False)
+                # f.write('\n')
 
-    logger.info("Saved filtered suffixes to" + prompt_train_dataset_suffixes)
+    # logger.info("Saved filtered suffixes to" + prompt_train_dataset_suffixes)
 
 
     logger.info("===== Starting BLEU-score calculatiosn now... =====")
@@ -188,7 +193,7 @@ def main():
         # Load the decoded generations file of the trial
         trial_file = os.path.join(
             ROOT_DIR,
-            DATASET_DIR,
+            "datasets/Europarl",
             LANGUAGE,
             EXPERIMENT_NAME,
             "decoded",
@@ -208,10 +213,20 @@ def main():
             json_obj = json.loads(line)
             exid = json_obj["exid"]
 
+            if index < len(exids):
+                exid = exids[index]
+            else:
+                logger.warning(f"Index {index} is out of range for exids list")
+                continue
+
             candidate = json_obj["text"]
 
             # Compare the generated text with the original text using the BLEU score using example id
-            suffix = suffix_lines[index]["text"].strip()
+            if index < len(suffix_lines):
+                suffix = suffix_lines[index]["text"].strip()
+            else:
+                logger.warning(f"Index {index} is out of range for suffix_lines")
+                continue
             
             suffix_ref = tokenizer.tokenize(suffix)
             suffix_ref = [s.replace('Ġ', ' ') for s in suffix_ref]

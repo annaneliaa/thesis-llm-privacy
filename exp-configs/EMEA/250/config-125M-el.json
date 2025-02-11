@@ -1,0 +1,22 @@
+{
+    "root_dir": "tmp/",
+    "dataset_dir": "context/EMEA/context/",
+    "source_dir": "./datasets",
+    "dataset_name": "EMEA.el-es-c-250",
+    "experiment_name": "el-250-100-125M",
+    "num_trials": 100,
+    "language": "el",
+    "split": "train",
+    "suffix_len": 50,
+    "prefix_len": 50,
+    "example_token_len": 250,
+    "preprefix_len": 150,
+    "source_file": "train_dataset.npy",
+    "batch_size": 32,
+    "model_name": "/scratch/s6153712/llm-privacy/short-programming-llm-privacy/datasets/context/EMEA/context/el/250/EleutherAI/gpt-neo-125M/",
+    "train_file": "/scratch/s6153712/llm-privacy/short-programming-llm-privacy/datasets/EMEA/250/train-el.txt",
+    "validation_file": "/scratch/s6153712/llm-privacy/short-programming-llm-privacy/datasets/EMEA/250/validation-el.txt",
+    "npy_arrays_base": "/scratch/s6153712/llm-privacy/short-programming-llm-privacy/datasets/context/EMEA/context/el/250/EleutherAI/gpt-neo-125M",
+    "validation_split_percentage": 0.1,
+    "seed": 42
+}

@@ -48,14 +48,17 @@ with open(args.config_file, "r") as f:
     BATCH_SIZE, 
     MODEL_NAME, 
     TRAIN_FILE, 
-    VAL_FILE, 
+    VAL_FILE,
+    NPY_ARRAYS_BASE,
     VAL_SPLIT, 
     SEED
 ) = load_constants_from_config(config)
 
 # Set up tokenizer
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-tokenizer.add_special_tokens({"pad_token": ""})
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
+tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
 def main():
     # Input: A dataset file with sentences in a specific language in JSONL format
@@ -71,12 +74,10 @@ def main():
 
     if SPLIT != "":
         logger.info(SPLIT)
-        ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + "-" + SPLIT + ".jsonl"))]
+        ds_files = [open(os.path.join("datasets", "Europarl", "250", f"Europarl.el-es-250.es-{SPLIT}.jsonl"))]
     else:
         logger.info("Split: ", SPLIT)
-        ds_files = [open(os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + "." + LANGUAGE + ".jsonl"))]
-
-    logger.info("Opened file: %s", str(ds_files[0].name))
+        ds_files = [open(os.path.join("datasets", "Europarl", "250", "Europarl.el-es-250.es-train.jsonl"))]
 
     prompts = {}
     line_count = 0
@@ -106,7 +107,7 @@ def main():
     if not os.path.exists(SOURCE_DIR):
         os.mkdir(SOURCE_DIR)
 
-    npy_arrays_base = os.path.join(SOURCE_DIR, DATASET_DIR, LANGUAGE, str(EXAMPLE_TOKEN_LEN), MODEL_NAME)
+    npy_arrays_base = "/scratch/s6153712/llm-privacy/short-programming-llm-privacy/datasets/context/Europarl/context/es/250/EleutherAI/gpt-neo-2.7B"
     os.makedirs(npy_arrays_base, exist_ok=True)
 
     # prompts = [x[1] for x in sorted(prompts.items())]

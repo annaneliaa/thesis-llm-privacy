@@ -2,7 +2,7 @@
 #SBATCH --time=04:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --job-name=extraction-100-en
+#SBATCH --job-name=extraction-100-es
 #SBATCH --mem=8000
 
 module purge

@@ -51,16 +51,17 @@ with open(args.config_file, "r") as f:
     BATCH_SIZE, 
     MODEL_NAME, 
     TRAIN_FILE, 
-    VAL_FILE, 
+    VAL_FILE,
+    NPY_ARRAYS_BASE,
     VAL_SPLIT, 
     SEED
 ) = load_constants_from_config(config)
 
-set_seed(SEED)
+# set_seed(SEED)
 
 # This script splits the full dataset into a training and validation set
 # Performed for both langauges in the experiment to maintain a balanced version of the training and validation sets
-languages = ["en", "nl"]
+languages = ["el", "es"]
 
 def main():
     logger.info("==== Starting data train+val split script ====")
@@ -77,7 +78,8 @@ def main():
 
     # take the size of the first language as the size of the dataset
     # this can be the second one as well, the input datasets are already aligned and identical
-    dataset_path = os.path.join(data_set_base + f".{languages[0]}")
+    dataset_path = os.path.join(DATASET_DIR, str(EXAMPLE_TOKEN_LEN), DATASET_NAME + f".{languages[0]}")
+    # print("Dataset path:", dataset_path)
     with open(dataset_path, "r") as f:
         dataset = f.readlines()
 
@@ -109,46 +111,50 @@ def main():
         logger.info(f"Processing language: {lang}")
         train_out_file = os.path.join(output_dir, "train-" + lang + ".txt")
         val_out_file = os.path.join(output_dir, "validation-" + lang + ".txt")
+        jsonl_out_file = os.path.join(data_set_base + f".{lang}-train.jsonl")
+        indices_exist = os.path.exists(indices_file)
+        text_files_exist = os.path.exists(train_out_file) and os.path.exists(val_out_file)
 
-        # Check if the files already exist
-        if os.path.exists(train_out_file) and os.path.exists(val_out_file) and os.path.exists(indices_file):
-            print("Files already exist. Skipping computation.")
-            return
-
-        dataset_path = os.path.join(data_set_base + f".{lang}") 
-        with open(dataset_path, "r") as f:
-            dataset = f.readlines()
+        # Split train and validation files only if they do not exist
+        if not text_files_exist or not indices_exist:
+            dataset_path = os.path.join(data_set_base + f".{lang}")
+            # print("Dataset path:", dataset_path) 
+            with open(dataset_path, "r") as f:
+                dataset = f.readlines()
         
-        # Create the train and eval datasets using the indices
-        train_dataset = [dataset[i] for i in train_indices]
-        eval_dataset = [dataset[i] for i in eval_indices]
+            # Create the train and eval datasets using the indices
+            train_dataset = [dataset[i] for i in train_indices]
+            eval_dataset = [dataset[i] for i in eval_indices]
 
-        # Save train and eval datasets to files
-        with open(train_out_file, "w") as f:
-            f.writelines(train_dataset)
+            # Save train and eval datasets to files
+            with open(train_out_file, "w") as f:
+                f.writelines(train_dataset)
 
-        with open(val_out_file, "w") as f:
-            f.writelines(eval_dataset)
+            with open(val_out_file, "w") as f:
+                f.writelines(eval_dataset)
+        else:
+            logger.info(f"Text files for {lang} already exist. Skipping text split.")
 
-        # Generate JSONL version of the training set for extraction
-        # open JSONL version of the whole dataset
-        # this code caused a major issue REWRITE INDEZ
-        with open(os.path.join(dataset_path + ".jsonl") , "r") as f, open(indices_file, "r") as idx_file:
-            # Read all lines into a list
-            dataset_jsonl = f.readlines()
-
-            output_file = os.path.join(dataset_path + "-train.jsonl")
-            print(f"Output file: {output_file}")  # Debug print
-
-            with open(output_file, "w") as out_file:
-
-                # iterate over all train_indices
+        # Generate the JSONL file (always executed)
+        if not os.path.exists(jsonl_out_file):
+            logger.info(f"Creating JSONL file for training set: {jsonl_out_file}")
+            dataset_path_jsonl = os.path.join(dataset_path + ".jsonl")
+            # print("Dataset path:", dataset_path_jsonl)
+            with open(dataset_path_jsonl, "r") as f, open(indices_file, "r") as idx_file:
+                dataset_jsonl = f.readlines()
                 train_indices = json.load(idx_file)["train"]
-    
-                for index in train_indices:
-                    json_obj = json.loads(dataset_jsonl[index])
-                    json.dump(json_obj, out_file, ensure_ascii=False)      
-                    out_file.write("\n")
+                # print("Train indices:", train_indices)
+                # print("Dataset jsonl:", dataset_jsonl)
+
+                with open(jsonl_out_file, "w") as out_file:
+                    # Iterate over all train_indices to write JSONL objects
+                    for index in train_indices:
+                        # print("last index:", index)
+                        json_obj = json.loads(dataset_jsonl[index])
+                        json.dump(json_obj, out_file, ensure_ascii=False)
+                        out_file.write("\n")
+        else:
+            logger.info(f"JSONL file for {lang} already exists. Skipping JSONL creation.")
 
     logger.info("==== Data train+val split script completed ====")
 

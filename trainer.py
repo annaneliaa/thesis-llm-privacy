@@ -60,23 +60,26 @@ with open(args.config_file, "r") as f:
     BATCH_SIZE, 
     MODEL_NAME, 
     TRAIN_FILE, 
-    VAL_FILE, 
+    VAL_FILE,
+    NPY_ARRAYS_BASE,
     VAL_SPLIT, 
     SEED
 ) = load_constants_from_config(config)
 
 # Change to .env later
 # This is the dir on Habrok where I store all models actively in use
-HF_CACHE_DIR = "/scratch/s4079876"
+HF_CACHE_DIR = "/scratch/s6153712/llm-privacy/hf_cache"
+model_path = os.path.join(HF_CACHE_DIR, MODEL_NAME)
 
 # Set up trainer
-output_dir = os.path.join(HF_CACHE_DIR, "finetuned", DATASET_DIR, EXPERIMENT_NAME)
-
+output_dir = os.path.join(HF_CACHE_DIR, "finetuned/Europarl", f"{LANGUAGE}-{EXAMPLE_TOKEN_LEN}-100-{SPLIT}")
 logger.info("Saving trained model to %s", output_dir)
 
 # Set default device
 if torch.cuda.is_available():
     DEFAULT_DEVICE = "cuda"
+    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.deterministic = False
 elif torch.backends.mps.is_available():
     DEFAULT_DEVICE = "mps"
 else:
@@ -101,10 +104,15 @@ logger.info("==== Starting trainer script ====")
 logger.info("Experiment name %s", EXPERIMENT_NAME)
 
 logger.info("Loading model...")
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(
-    DEFAULT_DEVICE
-)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+print("Loading model...")
+
+try:
+    model = AutoModelForCausalLM.from_pretrained(model_path).to(DEFAULT_DEVICE)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+except OSError as e:
+    raise
+
+model.gradient_checkpointing_enable()
 
 # Set the padding token to the EOS token
 tokenizer.pad_token = tokenizer.eos_token
@@ -116,7 +124,7 @@ print("Model max length:", tokenizer.model_max_length)
 with open(TRAIN_FILE, "r") as f:
     train = f.readlines()
 
-tokenized_sentences = tokenizer(train, padding=True, truncation=True, return_tensors="pt")
+tokenized_sentences = tokenizer(train, max_length = 512, padding=True, truncation=True, return_tensors="pt")
 # the sentences are lists of token ids
 print("Number of sentences:", len(tokenized_sentences["input_ids"]))
 
@@ -124,7 +132,7 @@ print("Number of sentences:", len(tokenized_sentences["input_ids"]))
 with open(VAL_FILE, "r") as f:
     val = f.readlines()
 
-tokenized_eval_sentences = tokenizer(val, padding=True, truncation=True, return_tensors="pt")
+tokenized_eval_sentences = tokenizer(val, max_length = 512, padding=True, truncation=True, return_tensors="pt")
 print("Number of validation sentences:", len(tokenized_eval_sentences["input_ids"]))
 
 # Training set up
@@ -159,12 +167,11 @@ default_args = {
     "evaluation_strategy": "steps",
     "eval_steps": 1000,
     # save steps is a high number to avoid overflow of storage disk on Habrok (we dont want to store all intermediate versions of the model)
-    "save_steps": 10000,
+    "save_steps": 20000,
     "save_total_limit": 3,
     "load_best_model_at_end": True,
     "metric_for_best_model": "eval_loss",
     "greater_is_better": False,
-    # default is 1, unless specified on command line
     "num_train_epochs": 1,
     "log_level": "error",
     "report_to": "none",

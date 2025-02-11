@@ -49,8 +49,9 @@ with open(args.config_file, "r") as f:
     SOURCE_FILE, 
     BATCH_SIZE, 
     MODEL_NAME, 
-    TRAIN_FILE, 
-    VAL_FILE, 
+    TRAIN_FILE,
+    VAL_FILE,
+    NPY_ARRAYS_BASE,  
     VAL_SPLIT, 
     SEED
     ) = load_constants_from_config(config)
@@ -61,20 +62,20 @@ def main():
     logger.info("====== Calculating number of correct guesses (accuracy) for %s in language %s ======" % (EXPERIMENT_NAME, LANGUAGE))
 
     experiment_base = os.path.join(ROOT_DIR, DATASET_DIR, LANGUAGE, EXPERIMENT_NAME)
-    bleu_scores_base = os.path.join(experiment_base, "bleu_scores")
+    bleu_scores_base = os.path.join(experiment_base, "bleu_scores2")
 
-    complete_score_file = os.path.join(bleu_scores_base, "sorted_compl_bleu_scores.jsonl")
-    output_file = os.path.join(experiment_base, "accuracy3.jsonl")
+    complete_score_file = os.path.join(bleu_scores_base, "complete_bleu_scores.jsonl")
+    output_file = os.path.join(experiment_base, "accuracy.jsonl")
 
     logger.info(f"Saving to {output_file}")
 
     logger.info(f"Reading scores from {complete_score_file}")
 
     # for analysis
-    rm_exids = []
-    with open("europarl/europarl-rm-exids.json", "r") as f:
-        rm_exids = json.load(f)
-        logger.info("Loaded %d removed exids." % len(rm_exids))
+    # rm_exids = []
+    # with open("europarl/europarl-rm-exids.json", "r") as f:
+    #     rm_exids = json.load(f)
+    #     logger.info("Loaded %d removed exids." % len(rm_exids))
 
     with(open(complete_score_file, "r")) as in_file, open(output_file, "w") as out_file:
         lines = in_file.readlines()
@@ -90,9 +91,9 @@ def main():
             exid = json_obj["exid"]
 
             # analysis if statement, comment out if not needed
-            if int(exid) in rm_exids:
-                logger.info("Skipping exid %s" % exid)
-                continue
+            # if int(exid) in rm_exids:
+            #    logger.info("Skipping exid %s" % exid)
+            #    continue
 
             scores = json_obj["scores"]
 

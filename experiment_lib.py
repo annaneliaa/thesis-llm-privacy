@@ -4,8 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import os
-import torch
+import logging
 from torch.utils.data import random_split
+
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 def is_file_empty(file_path):
     return os.path.getsize(file_path) == 0
@@ -27,14 +30,19 @@ def generate_exid_list(file_path):
 # and a list of exids from the original (training) dataset
 def generations_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exids):
     """Converts the tokenized data to a JSONL file at `path`."""
-
+    
     with open(output_file_path, "w", encoding="utf-8", newline='') as file:
         index = 0
         
         for row in data:
-            exid = exids[index]
+            if index < len(exids):
+                exid = exids[index]
+            else:
+                logger.warning(f"Index {index} is out of range for exids list. Skipping this item.")
+                continue
+
             # Convert token IDs to strings
-            # replace token space character with empty string
+            # Replace token space character with empty string
             decoded_string = tokenizer.decode(row, skip_special_tokens=True).replace('Ġ', '')
             line = decoded_string.strip()
 
@@ -49,31 +57,45 @@ def generations_to_jsonl(output_file_path: str, data: np.ndarray, tokenizer, exi
 
     print("Decoded strings saved to:", str(output_file_path))
 
+
 # Function to generate a jsonlines version of scores for each example, for each trial
-def losses_to_jsonl(output_file_path: str, data: np.ndarray, exids):
-    """Converts tokenized losses to a JSONL file at `path`."""
-    index = 0
+def losses_to_jsonl(output_file_path: str, directory_path: str, exids_file_path: str):
+    import numpy as np
+    import json
+    import os
 
-    with open(output_file_path, "w", encoding="utf-8", newline='') as file:
-        # loop over all rows in the trial
-        for row in data:     
-            # get the exid of the example from list       
-            exid = int(exids[index])
+    # Load exids from the JSON file
+    with open(exids_file_path, 'r') as f:
+        exids = json.load(f)
 
-            # scores are ordered
-            # convert to native python float
-            score = row[0].item()
-    
-            # Create a JSON object with a "text" field containing the line
-            json_object = {"exid": exid,
-                           "loss": score}
+    # List all .npy files in the directory
+    numpy_files = [f for f in os.listdir(directory_path) if f.endswith('.npy')]
 
-            # Write the JSON object to the output file as a single line
-            json.dump(json_object, file, ensure_ascii=False)
-            file.write("\n")
-            index += 1
+    data = []
+    for file in numpy_files:
+        npy_data = np.load(os.path.join(directory_path, file))
+        data.append(npy_data)
 
-    print("Decoded losses saved to: %s", str(output_file_path))
+    # Flatten the data if necessary
+    data = np.concatenate(data)
+
+    # Open the output file for writing
+    with open(output_file_path, 'w', encoding='utf-8', newline='') as file:
+        # Loop through each row of data
+        for index, row in enumerate(data):
+            # Ensure index is within the bounds of the exids list
+            if index < len(exids):
+                exid = exids[index]
+                score = row[0].item()
+
+                # Create a JSON object with exid and loss
+                json_object = {"exid": exid, "loss": score}
+
+                # Write the JSON object to the file
+                json.dump(json_object, file, ensure_ascii=False)
+                file.write("\n")
+            else:
+                print(f"Index {index} out of the limit.")
 
 # Function to merge bleu scores over different trials of one example sentence with exid curr_exid
 # Using binary search to speed up the search when dealing with large datasets
@@ -138,7 +160,7 @@ def read_bleu_scores(file_path):
             scores.append(data['score'])
     return scores
 
-def plot_bleu_distribution(root_dir, experiment_name, scores, trial, num_trials, num_bins=10):
+def plot_bleu_distribution(root_dir, experiment_name, scores, trial, num_bins=10):
     plt.figure(figsize=(10, 6))
     
     # Compute histogram
@@ -203,13 +225,14 @@ def load_constants_from_config(config):
     # Batch size for feeding prompts to the model
     BATCH_SIZE = config["batch_size"]
     # Name of the model to use
-    MODEL_NAME = config["model"]
+    MODEL_NAME = config["model_name"]
     TRAIN_FILE = config["train_file"]
     VAL_FILE = config["validation_file"]
+    NPY_ARRAYS_BASE = config["npy_arrays_base"]
     VAL_SPLIT = config["validation_split_percentage"]
     SEED = config["seed"]
 
-    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, VAL_SPLIT, SEED)
+    return (ROOT_DIR, DATASET_DIR, SOURCE_DIR, DATASET_NAME, EXPERIMENT_NAME, NUM_TRIALS, PREFIX_LEN, SUFFIX_LEN, PREPREFIX_LEN, LANGUAGE, SPLIT, EXAMPLE_TOKEN_LEN, SOURCE_FILE, BATCH_SIZE, MODEL_NAME, TRAIN_FILE, VAL_FILE, NPY_ARRAYS_BASE, VAL_SPLIT, SEED)
 
 
 def text_to_csv(dir, train_file, val_file):
